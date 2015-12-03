@@ -69,7 +69,13 @@ def scriptsContent(settings, group):
             fname = fname.strip('"')
             if os.path.isfile(fname):
                 with open(fname, 'r', encoding=settings['general']['encoding']) as f:
-                    yield f.read().format(**settings[group])
+                    content = f.read()
+                    try:
+                        content = content.format(**settings[group])
+                    except Exception as e:
+                        print('error "{0}" occured during formating content of file: "{1}"'.format(e, fname))
+						
+                    yield content
 
 
 

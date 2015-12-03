@@ -78,7 +78,7 @@ def scriptsContent(settings, group):
 def main():
     parser = argparse.ArgumentParser(description='concatenates all scripts in one')
     parser.add_argument('-d', '--dir', dest='dir', default=None, help='directory with scripts')
-    parser.add_argument('-o', '--out', dest='out', default='out.sql', help='result file name')
+    parser.add_argument('-o', '--out', dest='out', default=None, help='result file name')
     parser.add_argument('-s', '--settings', dest='settings', default='settings.ini', help='settings file')
     parser.add_argument('-g', '--groups', dest='groups', default='groups'
                         , help='option name which contains name of groups with used scripts')
@@ -94,6 +94,8 @@ def main():
         return 1
 
     # print(settings['routines'])
+    if args.out is None:
+        args.out = args.groups + '.sql'
 
     with open(args.out, 'w', encoding='utf-8') as o:
         for group in settings['general'][args.groups].split(','):

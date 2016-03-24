@@ -72,12 +72,9 @@ def scriptsContent(settings, group):
                     content = f.read()
                     try:
                         content = content.format(**settings[group])
+                        yield content
                     except Exception as e:
                         print('error "{0}" occured during formating content of file: "{1}"'.format(e, fname))
-						
-                    yield content
-
-
 
 
 

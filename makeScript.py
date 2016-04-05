@@ -10,64 +10,6 @@ import shlex
 import glob
 
 
-
-def simpeHandler(inputFile, args):
-    return inputFile.read()
-
-
-def escapeProcedure(inputFile, args):
-    content = inputFile.read()
-    if re.match(r'\s*create or alter procedure', content):
-        return 'SET TERT ^ ;\n' + content + '\nSET TERT ; ^\n'
-    return
-
-
-def connectInfoHadler(inputFile, args):
-    content = ''
-    if args.logs_db:
-        content = inputFile.read()
-        content.replace('<logs_connect_string>', "'{logs_connect_string}'".format(args.logs_db))
-        content.replace('<logs_user>', "'{logs_user}'".format(args.logs_user))
-        content.replace('<logs_password>', "'{logs_password}'".format(args.logs_pwd))
-        content.replace('<logs_role>', "'{}'".format(args.logs_role) if args.logs_role is not None else 'CURRENT_ROLE')
-        content.replace('<gz_hub_grpid>', "{}".format(args.gz_grpid))
-        content.replace('<gz_hub_uri>', "'{}'".format(args.gz_uri))
-    return content
-
-
-
-
-
-# def main():
-#     parser = argparse.ArgumentParser(description='concatenates all scripts in one')
-#     parser.add_argument('-t', '--tables', dest='addTables', action='store_true')
-#     parser.add_argument('--logs-db', dest='logs_db', default=None, help='connection string for logs database')
-#     parser.add_argument('--logs-user', dest='logs_user', default='CHEA', help='user for connect to logs database')
-#     parser.add_argument('--logs-pwd', dest='logs_pwd', default='PDNTP', help='password for connect to logs database')
-#     parser.add_argument('--logs-role', dest='logs_role', default=None, help='role for connect to logs database')
-#     parser.add_argument('--gz-grpid', dest='gz_grpid', default='98'
-#                         , help='grpid (database group identifier) for remote exchange service')
-#     parser.add_argument('-gz-uri', dest='gz_uri', default='http://10.128.66.112/Service/HubService.svc'
-#                         , help='uri for remote exchange service')
-#     args = parser.parse_args()
-#
-#     processQueue = []
-#     if args.addTables:
-#         processQueue.append(('tables', simpeHandler))
-#     if args.logs_db:
-#         processQueue.append(('connectInfo', connectInfoHadler))
-#     processQueue.append(('procedures', simpeHandler))
-#
-#
-#     src = '.'
-#     commonOutName = 'commonOut.sql'
-#     with open(commonOutName, 'w', encoding='utf-8') as o:
-#         for scriptListName, handler in processQueue:
-#             for fName in scripts.get(scriptListName, []):
-#                 with open(os.path.join(src, fName), 'r', encoding='utf-8') as script:
-#                     o.write(handler(script, args) + '\n')
-
-
 def get_git_info(obj_path):
     git_info = {}
     
@@ -107,23 +49,37 @@ def add_git_info(content, git_info):
     
 
 def fileContent(fname, encoding, params):
+    content = ''
     with open(fname, 'r', encoding=encoding) as f:
         print('processing file: {}'.format(fname))
         content = add_git_info(f.read(), get_git_info(fname))
         try:
             content = content.format(**params)
-            return content
         except Exception as e:
             print('error "{0}" occured during formating content of file: "{1}"'.format(e, fname))
+    return content
+
+            
+def parse_file_names(source, settings):
+    # if source it is rule (option from [general] section) with sections list, separated by comma
+    if settings.has_option('general', source):
+        print('browsing rules {}'.format(source))
+        # for all sections in rule
+        for section in settings['general'][source].split(','):
+            section = section.strip()
+            #if section not containing 'scripts' option with file names (or file patterns), skip it
+            print('browsing section {}'.format(section))
+            if not settings.has_option(section, 'scripts'):
+                continue
+            for fname_pattern in settings[section]['scripts'].split('\n'):
+                for fname in glob.glob(fname_pattern):
+                    yield fname
+    else: #suggest, that source - it is file name or file name pattern
+        for fname in glob.glob(source):
+            yield fname
+                
+                
     
-
-def processScriptsGroup(settings, group, encoding):
-    if settings.has_option(group, 'scripts'):
-        for fname in settings[group]['scripts'].split('\n'):
-            fname = fname.strip('"')
-            if os.path.isfile(fname):
-                yield fileContent(fname, encoding, settings[group])
-
 
 def main():
     encoding = 'utf-8'
@@ -132,31 +88,37 @@ def main():
     parser.add_argument('-d', '--dir', dest='dir', default=None, help='directory with scripts')
     parser.add_argument('-o', '--out', dest='out', default=None, help='result file name')
     parser.add_argument('-s', '--settings', dest='settings', default='settings.ini', help='settings file')
-    parser.add_argument('-g', '--groups', dest='groups', default='groups'
-                        , help='option name which contains name of groups with used scripts')
-    parser.add_argument('files', nargs='*')
-    args = parser.parse_args()
+    parser.add_argument('-p', '--params', dest='params', default=None
+                        , help='name of sections with additional parameters for update (add/rewrite) parameters from [params] section')
+    parser.add_argument('sources', default='default', nargs='*'
+                        , help='name of option in [general] section with list of sections with rules for making script or file names')
+    options = parser.parse_args()
 
-    if args.dir:
-        os.chdir(args.dir)
+    if options.dir:
+        os.chdir(options.dir)
 
     settings = configparser.ConfigParser()
-    settings.read(args.settings)
-
-    # print(settings['routines'])
-    if args.out is None:
-        args.out = args.groups + '.sql'
-    print(os.path.abspath(args.out))
+    settings.read(options.settings)
     
-    with open(args.out, 'w', encoding = encoding) as o:
-        if settings.has_option('general', args.groups):
-            for group in settings['general'][args.groups].split(','):
-                group = group.strip()
-                for content in processScriptsGroup(settings, group, encoding):
-                    o.write(content + '\n\n')
-        for fname_pattern in args.files:
-            for fname in glob.glob(fname_pattern):
-                o.write(fileContent(fname, encoding, {}) + '\n\n')
+    # получение параметров для подстановки в скрипты
+    params = settings['params'] if settings.has_section('params') else {}
+    if settings.has_section(options.params):
+        params.update(settings[options.params])
+
+    sources = options.sources if type(options.sources) is list else [options.sources] 
+          
+    if options.out is None:
+        options.out = (sources[0] if settings.has_option('general', sources[0])
+                                            else 'scripts') \
+                      + '.sql'
+            
+    with open(options.out, 'w', encoding = encoding) as o:
+        for source in sources:
+            for fname in parse_file_names(source, settings):
+                o.write(fileContent(fname, encoding, params) + '\n\n')
+                
+    
+    print('created {}'.format(os.path.abspath(options.out)))
     return 0
 
 

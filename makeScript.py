@@ -12,7 +12,7 @@ import glob
 
 def get_git_info(obj_path):
     git_info = {}
-    
+
     obj_path = os.path.abspath(obj_path)
     workdir = os.path.abspath(os.path.dirname(obj_path))
     while not os.path.ismount(workdir):
@@ -23,10 +23,10 @@ def get_git_info(obj_path):
                                     , 'date': 'git log -1 --pretty="%ad" -- "{}"'.format(obj_path)
                                     , 'message': 'git log -1 --pretty=%B -- "{}"'.format(obj_path)
                                     }.items():
-                #if param == 'message': print(command)
+
                 p = subprocess.Popen(shlex.split(command), stdout = subprocess.PIPE, cwd = workdir)
                 p.wait()
-                git_info[param] = ''.join([line.decode('utf-8') for line in p.stdout.readlines()]).replace('\n', ' ')
+                git_info[param] = ''.join([line.decode('utf-8') for line in p.stdout.readlines()])
             break
         workdir = os.path.abspath(os.path.join(workdir, os.pardir))
     return git_info
@@ -37,29 +37,80 @@ def add_git_info(content, git_info):
         return content
     first_begin = re.search(r'\bbegin\b', content, re.IGNORECASE)
     if first_begin:
-        return content[:first_begin.end()] + '\n' \
-                    + '-- generated on ' + str(datetime.datetime.now()) + '\n' \
-                    + '-- git branch: ' + git_info['branch'] + '\n' \
-                    + '-- git SHA-1: ' + git_info['sha'] + '\n' \
-                    + '-- git author: ' + git_info['author'] + '\n' \
-                    + '-- git date: ' + git_info['date'] + '\n' \
-                    + '-- git commit message: ' + git_info['message'] + '\n' \
-                    + content[first_begin.end():]
+        return '\n'.join([content[:first_begin.end()],
+                            '\n'.join(['-- generated on ' + str(datetime.datetime.now()),
+                                        '-- git branch: ' + git_info['branch'],
+                                        '-- git SHA-1: ' + git_info['sha'],
+                                        '-- git author: ' + git_info['author'],
+                                        '-- git date: ' + git_info['date'],
+                                        '-- git commit message: ' + git_info['message'].replace('\n', '\n-- \t\t')
+                                        ]).replace('\n\n', '\n'),
+                         content[first_begin.end():]
+                         ])
     return content
-    
 
-def fileContent(fname, encoding, params):
+
+def parse_sctipt_info(content):
+    info = {}
+
+    # поиск блока doxygen комментариев, начинающихся с "/*!"
+    match = re.search(r'/\*!.*\*/', content, flags = re.MULTILINE | re.DOTALL)
+    if not match:
+        return info
+    comment_begin, comment_end = match.start(), match.end()
+
+    # поиск названия функции\процедуры
+    match = re.search(r'\\fn\s+(\w+)', content[comment_begin:comment_end])
+    if match:
+        info['function'] = match.group(1)
+
+    # поиск короткого описания
+    match = re.search(r'\\brief\s+(.+)', content[comment_begin:comment_end])
+    if match:
+        info['brief'] = match.group(1)
+
+    # поиск описания параметров
+    params_pattern = re.compile(r'\\param\s+(?P<parameter>\w+)\s+(?P<comment>.*)')
+    info['parameters'] = [match.groupdict() for match in params_pattern.finditer(content[comment_begin:comment_end])]
+
+    return info
+
+
+def add_comments_block(content, info):
+    comments = []
+
+    function = info.get('function', None)
+    function_comment = info.get('brief', None)
+    if function and function_comment:
+        comments.append('comment on procedure {} is \'{}\';'.format(function, function_comment));
+
+    if 'parameters' in info:
+        param_comment = 'comment on parameter {function}.{parameter} is \'{comment}\';'
+        comments += [param_comment.format(function = function, **param_info)
+                        for param_info in info['parameters']
+                    ];
+
+    return content if not comments \
+                    else content + '\n\n' + '\n'.join(comments)
+
+
+def prepareFileContent(fname, encoding, params):
     content = ''
     with open(fname, 'r', encoding=encoding) as f:
         print('processing file: {}'.format(fname))
-        content = add_git_info(f.read(), get_git_info(fname))
+
+        content = f.read()
+        script_info = parse_sctipt_info(content)
+
+        content = add_git_info(content, get_git_info(fname))
+        content = add_comments_block(content, script_info)
         try:
             content = content.format(**params)
         except Exception as e:
             print('error "{0}" occured during formating content of file: "{1}"'.format(e, fname))
     return content
 
-            
+
 def parse_file_names(source, settings):
     # if source it is rule (option from [general] section) with sections list, separated by comma
     if settings.has_option('general', source):
@@ -77,13 +128,13 @@ def parse_file_names(source, settings):
     else: #suggest, that source - it is file name or file name pattern
         for fname in glob.glob(source):
             yield fname
-                
-                
-    
+
+
+
 
 def main():
     encoding = 'utf-8'
-    
+
     parser = argparse.ArgumentParser(description='concatenates all scripts in one')
     parser.add_argument('-d', '--dir', dest='dir', default=None, help='directory with scripts')
     parser.add_argument('-o', '--out', dest='out', default=None, help='result file name')
@@ -99,25 +150,25 @@ def main():
 
     settings = configparser.ConfigParser()
     settings.read(options.settings)
-    
+
     # получение параметров для подстановки в скрипты
     params = settings['params'] if settings.has_section('params') else {}
     if settings.has_section(options.params):
         params.update(settings[options.params])
 
-    sources = options.sources if type(options.sources) is list else [options.sources] 
-          
+    sources = options.sources if type(options.sources) is list else [options.sources]
+
     if options.out is None:
         options.out = (sources[0] if settings.has_option('general', sources[0])
                                             else 'scripts') \
                       + '.sql'
-            
+
     with open(options.out, 'w', encoding = encoding) as o:
         for source in sources:
             for fname in parse_file_names(source, settings):
-                o.write(fileContent(fname, encoding, params) + '\n\n')
-                
-    
+                o.write(prepareFileContent(fname, encoding, params) + '\n\n')
+
+
     print('created {}'.format(os.path.abspath(options.out)))
     return 0
 

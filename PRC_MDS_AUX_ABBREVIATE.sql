@@ -32,6 +32,8 @@ declare c_type smallint;
 declare prev_c_type smallint;
 declare part_number bigint;
 begin
+    if (str is null) then exit;
+    
     abbr = '';
     str = trim(str);
     pos = 1;

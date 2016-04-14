@@ -70,7 +70,7 @@ def parse_sctipt_info(content):
         info['brief'] = match.group(1)
 
     # поиск описания параметров
-    params_pattern = re.compile(r'\\param\s+(?P<parameter>\w+)\s+(?P<comment>.*)')
+    params_pattern = re.compile(r'\\param(?:\[(?:in|out)\])?\s+(?P<parameter>\w+)\s+(?P<comment>.*)')
     info['parameters'] = [match.groupdict() for match in params_pattern.finditer(content[comment_begin:comment_end])]
 
     return info

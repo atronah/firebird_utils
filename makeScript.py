@@ -135,7 +135,7 @@ def parse_file_names(source, settings):
 def main():
     encoding = 'utf-8'
 
-    parser = argparse.ArgumentParser(description='concatenates all scripts in one')
+    parser = argparse.ArgumentParser(description='concatenates all scripts in one (script files must be utf-8 and shouldnt contain "{" and "}" except cases, when it used for passing arguments from .ini')
     parser.add_argument('-d', '--dir', dest='dir', default=None, help='directory with scripts')
     parser.add_argument('-o', '--out', dest='out', default=None, help='result file name')
     parser.add_argument('-s', '--settings', dest='settings', default='settings.ini', help='settings file')

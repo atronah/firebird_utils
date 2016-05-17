@@ -1,1 +1,2 @@
 check duplicates during generate script
+support changing directory for group to obviate the need for type same prefixes in scripts

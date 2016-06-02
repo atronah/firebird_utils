@@ -109,6 +109,19 @@ def prepareFileContent(fname, encoding, params):
         except Exception as e:
             print('error "{0}" occured during formating content of file: "{1}"'.format(e, fname))
     return content
+    
+
+def drop_scripts(fname, encoding):
+    drop_scripts = []
+    pattern = re.compile(r'create\s+(?:or alter\s+)?(procedure|trigger|table|sequence|generator)\s+(\w+)')
+    with open(fname, 'r', encoding=encoding) as f:
+        for line in f:
+            match = re.match(pattern, line)
+            if match:
+                drop_scripts.append('drop {0} {1};'.format(*match.groups()))
+    drop_scripts.reverse()
+    return drop_scripts
+            
 
 
 def parse_file_names(source, settings):
@@ -171,9 +184,13 @@ def main():
         for source in sources:
             for fname in parse_file_names(source, settings):
                 o.write(prepareFileContent(fname, encoding, params) + '\n\n')
-
-
     print('created {}'.format(os.path.abspath(out_fullname)))
+    
+    drop_fullname = os.path.join(out_dir, 'drop_' + options.out)
+    with open(drop_fullname, 'w', encoding = encoding) as o:
+        o.write('\n'.join(drop_scripts(out_fullname, encoding)))
+    print('created {}'.format(os.path.abspath(drop_fullname)))
+        
     return 0
 
 

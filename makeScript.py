@@ -134,6 +134,7 @@ def parse_file_names(source, settings):
 
 def main():
     encoding = 'utf-8'
+    out_dir = 'builds'
 
     parser = argparse.ArgumentParser(description='concatenates all scripts in one (script files must be utf-8 and shouldnt contain "{" and "}" except cases, when it used for passing arguments from .ini')
     parser.add_argument('-d', '--dir', dest='dir', default=None, help='directory with scripts')
@@ -147,6 +148,8 @@ def main():
 
     if options.dir:
         os.chdir(options.dir)
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
 
     settings = configparser.ConfigParser()
     settings.read(options.settings)
@@ -162,7 +165,8 @@ def main():
         options.out = (sources[0] if settings.has_option('general', sources[0])
                                             else 'scripts') \
                       + '.sql'
-
+    
+    options.out = os.path.join(out_dir, options.out)
     with open(options.out, 'w', encoding = encoding) as o:
         for source in sources:
             for fname in parse_file_names(source, settings):

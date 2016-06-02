@@ -166,14 +166,14 @@ def main():
                                             else 'scripts') \
                       + '.sql'
     
-    options.out = os.path.join(out_dir, options.out)
-    with open(options.out, 'w', encoding = encoding) as o:
+    out_fullname = os.path.join(out_dir, options.out)
+    with open(out_fullname, 'w', encoding = encoding) as o:
         for source in sources:
             for fname in parse_file_names(source, settings):
                 o.write(prepareFileContent(fname, encoding, params) + '\n\n')
 
 
-    print('created {}'.format(os.path.abspath(options.out)))
+    print('created {}'.format(os.path.abspath(out_fullname)))
     return 0
 
 

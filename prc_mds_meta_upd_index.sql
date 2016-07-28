@@ -21,7 +21,7 @@ begin
         -- if there are unknown table fields in passed index_expr
         if (replace(:index_expr, ' ', '') not similar to '[a-zA-Z][a-zA-Z0-9_]*(,[a-zA-Z][a-zA-Z0-9_]*)*'
             or exists(select *
-                        from aux_split_text(:index_expr, ' ') as i
+                        from aux_split_text(:index_expr, ',') as i
                         where not exists(select *
                                             from rdb$relation_fields as f
                                             where trim(f.rdb$field_name) = upper(trim(i.part))

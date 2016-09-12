@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <ib_util.h>
 
-extern "C" char* inflectName(char *name, int *c){
+extern "C" char* inflect_name(char *name, int *c){
     HINSTANCE hDLL;
     typedef int (__stdcall *LPFNGetFIOPadegFSAS)
       (unsigned char *, int, unsigned char *, int &);

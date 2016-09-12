@@ -22,7 +22,7 @@ g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
 Available functions
 -------------------
 
-### inflectName(name: string, case: int): string
+### inflect_name(name: string, case: int): string
 Function to infect person's name for case.
 
 **Input params:**
@@ -45,15 +45,15 @@ Function to infect person's name for case.
 
 **Query for declaration in Firebird:**
 ```sql
-declare external function inflectName
+declare external function inflect_name
     cstring(1024), smallint
 returns cstring(1024) FREE_IT
-entry_point 'inflectName' module_name 'atronah';
+entry_point 'inflect_name' module_name 'atronah';
 ```
 
 **Query for delete declaration:**
 ```sql
-drop external function inflectName;
+drop external function inflect_name;
 ```
 
 

@@ -24,7 +24,7 @@ g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
 Доступные пользовательские функции
 ----------------------------------
 
-### inflectName(name: string, case: int): string
+### inflect_name(name: string, case: int): string
 Функция для склонения Ф.И.О. человека в указаный падеж.
 
 **Входные параметры:**
@@ -47,15 +47,15 @@ g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
 
 **Запрос на объявление функции в Firebird:**
 ```sql
-declare external function inflectName
+declare external function inflect_name
     cstring(1024), smallint
 returns cstring(1024) FREE_IT
-entry_point 'inflectName' module_name 'atronah';
+entry_point 'inflect_name' module_name 'atronah';
 ```
 
 **Запрос на удаление объявленой ранее функции:**
 ```sql
-drop external function inflectName;
+drop external function inflect_name;
 ```
 
 

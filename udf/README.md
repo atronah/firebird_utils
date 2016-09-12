@@ -10,7 +10,7 @@ From [Official cite][firebird]:
 
 At this moment all UDF-functions presented by:
 * [atronah.dll][] - interface library file, which you have to put in `<firebrid_instance>/UDF` directory.
-* [Pages.dll][] - implementation library file, which you have to put in `<firebrid_instance>/bin` directory. This library downloaded from topic [Склонение фамилий, имен и отчеств по падежам Библиотека функций.](http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060) by [link](http://www.delphikingdom.ru/zip/Padeg.zip) on 2016-09-12.
+* [Padeg.dll][] - implementation library file, which you have to put in `<firebrid_instance>/bin` directory. This library downloaded from topic [Склонение фамилий, имен и отчеств по падежам Библиотека функций.](http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060) by [link](http://www.delphikingdom.ru/zip/Padeg.zip) on 2016-09-12.
 
 Current version of [atronah.dll][] compiled by **g++** compiler from [MinGW 5.3.0][mingw] with using [ib_util.dll][] library from [Firebird 2.5.5][firebird].
 Compile command:
@@ -59,7 +59,7 @@ drop external function inflectName;
 
 
 [atronah.dll]: ./lib/atronah.dll
-[Pages.dll]: ./lib/Pages.dll
+[Padeg.dll]: ./lib/Padeg.dll
 [ib_util.dll]: ./lib/ib_util.dll
 [mingw]: http://www.mingw.org/
 [firebird]: http://www.firebirdsql.org/

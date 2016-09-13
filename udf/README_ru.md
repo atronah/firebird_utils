@@ -14,7 +14,7 @@
 --------
 * [Библиотеки](#Библиотеки)
 * [Доступные пользовательские функции](#Доступные-пользовательские-функции)
-    * [inflect_name](#inflect_namename-string-case-int-string)
+    * [inflect_name](#inflect_namename-string-case-int-sex-int-string)
 
 
 Библиотеки
@@ -35,13 +35,17 @@ g++ -shared -o padeg_proxy.dll src/padeg_proxy.cpp -I ./include lib/ib_utils.dll
 Доступные пользовательские функции
 ----------------------------------
 
-### inflect_name(name: string, case: int): string
+### inflect_name(name: string, case: int, sex: int): string
 Функция для склонения Ф.И.О. человека в указаный падеж.
-Использует [GetFIOPadegFSAS][] процедуру из [Padeg.dll][].
+
+Используемые процедуры исходной библиотеки [Padeg.dll][]:
+* [GetFIOPadegFS][]  - если пол задан.
+* [GetFIOPadegFSAS][] - если пол не задан.
 
 **Входные параметры:**
 * `name` - Строка (максимальная длина которой состовляет 1024 символа) с Ф.И.О. человека, которые необходимо просклонять (cоответствует параметру `pFIO` ).
 * `case` - Номер целевого падежа (cоответствует параметру `nPadeg` исходной процедуры).
+* `sex` - Признак пола. 1 - Мужской, 2 - Женский, иначе включить автоопределение по отчеству.
 Доступные значения:
     * 1 - Именительный
     * 2 - Родительный
@@ -61,7 +65,7 @@ g++ -shared -o padeg_proxy.dll src/padeg_proxy.cpp -I ./include lib/ib_utils.dll
 **Запрос на объявление функции в Firebird:**
 ```sql
 declare external function inflect_name
-    cstring(1024), smallint
+    cstring(1024), integer, integer
 returns cstring(1024) FREE_IT
 entry_point 'inflect_name' module_name 'padeg_proxy';
 ```
@@ -79,5 +83,6 @@ drop external function inflect_name;
 [mingw]: http://www.mingw.org/
 [firebird]: http://www.firebirdsql.org/
 [padeg_source]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060
+[GetFIOPadegFS]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1714557337758
 [GetFIOPadegFSAS]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_172811950154
 [EN]: README.md

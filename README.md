@@ -1,8 +1,12 @@
-Description
-===========
-Project for useful scripts and others for working with Firebird databases.
+**EN** | [RU][]
+
+Firebird utils
+==============
+Project for useful things (scripts, queries, udf-librarires) for Firebird.
 
 
 Contents
 --------
-* [UDF](udf/README.md)
+* [UDF](udf/README.md) - Libraries of user defined functions to use from Firebird directly.
+
+[RU]: README_ru.md

@@ -1,4 +1,4 @@
-[EN](README.md) | **RU**
+[EN][] | **RU**
 
 Пользовательские функции (UDF)
 ==============================
@@ -71,3 +71,4 @@ drop external function inflect_name;
 [firebird]: http://www.firebirdsql.org/
 [padeg_source]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060
 [GetFIOPadegFSAS]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_172811950154
+[EN]: README.md

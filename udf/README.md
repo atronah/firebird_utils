@@ -12,7 +12,7 @@ Contents
 --------
 * [Libraries](#Libraries)
 * [Available functions](#Available-functions)
-    * [inflect_name](#inflect_namename-string-case-int-string)
+    * [inflect_name](#inflect_namename-string-case-int-sex-int-string)
 
 
 Libraries
@@ -33,13 +33,16 @@ g++ -shared -o padeg_proxy.dll src/padeg_proxy.cpp -I ./include lib/ib_utils.dll
 Available functions
 -------------------
 
-### inflect_name(name: string, case: int): string
+### inflect_name(name: string, case: int, sex: int): string
 Function to inflect person's name for case.
-It uses [GetFIOPadegFSAS][] procedure from [Padeg.dll][].
+Used procedures of original library [Padeg.dll][]:
+* [GetFIOPadegFS][]  - if correct sex is given.
+* [GetFIOPadegFSAS][] - if correct sex is not given.
 
 **Input params:**
 * `name` - string (maximum length is 1024 characters) with person's name to inflect (corresponds to `pFIO` params of original procedure).
 * `case` - number of target case (corresponds to `nPadeg` params of original procedure).
+* `sex` - sex of name. 1 - male, 2 - female, otherwise using auto detect sex by midname (patronym).
 available values:
     * 1 - Nominative
     * 2 - Genitive
@@ -59,7 +62,7 @@ available values:
 **Query to declare function in Firebird:**
 ```sql
 declare external function inflect_name
-    cstring(1024), smallint
+    cstring(1024), integer, integer
 returns cstring(1024) FREE_IT
 entry_point 'inflect_name' module_name 'padeg_proxy';
 ```
@@ -77,6 +80,7 @@ drop external function inflect_name;
 [mingw]: http://www.mingw.org/
 [firebird]: http://www.firebirdsql.org/
 [padeg_source]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060
+[GetFIOPadegFS]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1714557337758
 [GetFIOPadegFSAS]: http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_172811950154
 
 [RU]: README_ru.md

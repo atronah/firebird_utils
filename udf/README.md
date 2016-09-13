@@ -8,6 +8,15 @@ From [official cite][firebird]:
 > A user defined function (UDF) in InterBase is merely a function written in any programming language that is compiled into a shared library. Under Windows platforms, shared libraries are commonly referred to as dynamic link libraries (DLL's).
 
 
+Contents
+--------
+* [Libraries](#Libraries)
+* [Available functions](#Available-functions)
+    * [inflect_name](#inflect_namename-string-case-int-string)
+
+
+Libraries
+---------
 Currently all UDF-functions are implemented by:
 * [padeg_proxy.dll][] - interface library file, which you have to put in `<firebrid_instance>/UDF` directory. This library provides wrapped version (suitable for use in Firebird) of functions from implementation library.
 * [Padeg.dll][] - implementation library file, which you have to put in `<firebrid_instance>/bin` directory.

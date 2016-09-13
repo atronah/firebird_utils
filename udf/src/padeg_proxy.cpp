@@ -12,11 +12,11 @@ extern "C" char* inflect_name(char *name, int *c){
     char * inflected_name;
     char cResult[1024];
     int len = 1024;
-    int state;
+    int state = 0;
 
     // http://www.delphikingdom.ru/asp/viewitem.asp?UrlItem=/mastering/poligon/webpadeg.htm#SubHeader_1762079927060
     hDLL = LoadLibrary("Padeg.dll");
-    inflected_name = (char*)ib_util_malloc(6);
+    inflected_name = (char*)ib_util_malloc(8);
     if (hDLL != NULL){
         lpfnGetFIOPadegFSAS = (LPFNGetFIOPadegFSAS)GetProcAddress(hDLL, "GetFIOPadegFSAS");
         if (lpfnGetFIOPadegFSAS != NULL) {

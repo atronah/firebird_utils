@@ -11,15 +11,15 @@
 
 
 На данный момент все UDF-функции реализованы с помощью следующих библиотек:
-* [atronah.dll][] - интерфейсная библиотека, которую вы должны поместить в папку `<firebrid_instance>/UDF`.
+* [padeg_proxy.dll][] - интерфейсная библиотека, которую вы должны поместить в папку `<firebrid_instance>/UDF`.
 Данная библиотека предоставляет удобные для вызова из Firebird обертки над функциями библиотеки реализации.
 * [Padeg.dll][] - библиотека реализации функуионала, которую вы должны поместить в папку `<firebrid_instance>/bin`.
 Данная библиотека является частьбю проекта, описанного в статье [Склонение фамилий, имен и отчеств по падежам Библиотека функций.][padeg_source]. Текущая версия библиотеки была скачена 2016-09-12 по [ссылке](http://www.delphikingdom.ru/zip/Padeg.zip).
 
-Текущая версия библиотеки [atronah.dll][] скомпилированна с помощью **g++** компилятора из проекта [MinGW 5.3.0][mingw] с использованием библиотеки [ib_util.dll][] из [Firebird 2.5.5][firebird].
+Текущая версия библиотеки [padeg_proxy.dll][] скомпилированна с помощью **g++** компилятора из проекта [MinGW 5.3.0][mingw] с использованием библиотеки [ib_util.dll][] из [Firebird 2.5.5][firebird].
 Команда для компиляции:
 ```shell
-g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
+g++ -shared -o padeg_proxy.dll src/padeg_proxy.cpp -I ./include lib/ib_utils.dll
 ```
 
 
@@ -54,7 +54,7 @@ g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
 declare external function inflect_name
     cstring(1024), smallint
 returns cstring(1024) FREE_IT
-entry_point 'inflect_name' module_name 'atronah';
+entry_point 'inflect_name' module_name 'padeg_proxy';
 ```
 
 **Запрос на удаление объявленой ранее функции:**
@@ -64,7 +64,7 @@ drop external function inflect_name;
 
 
 
-[atronah.dll]: ./lib/atronah.dll
+[padeg_proxy.dll]: ./lib/padeg_proxy.dll
 [Padeg.dll]: ./lib/Padeg.dll
 [ib_util.dll]: ./lib/ib_util.dll
 [mingw]: http://www.mingw.org/

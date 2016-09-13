@@ -9,15 +9,15 @@ From [official cite][firebird]:
 
 
 Currently all UDF-functions are implemented by:
-* [atronah.dll][] - interface library file, which you have to put in `<firebrid_instance>/UDF` directory. This library provides wrapped version (suitable for use in Firebird) of functions from implementation library.
+* [padeg_proxy.dll][] - interface library file, which you have to put in `<firebrid_instance>/UDF` directory. This library provides wrapped version (suitable for use in Firebird) of functions from implementation library.
 * [Padeg.dll][] - implementation library file, which you have to put in `<firebrid_instance>/bin` directory.
 This library is a part of third-party project, which is described in article [Склонение фамилий, имен и отчеств по падежам Библиотека функций.][padeg_source].
 Current version of .dll file has been downloaded by [link](http://www.delphikingdom.ru/zip/Padeg.zip) on 2016-09-12.
 
-Current version of [atronah.dll][] has been compiled by **g++** compiler from [MinGW 5.3.0][mingw] using [ib_util.dll][] library from [Firebird 2.5.5][firebird].
+Current version of [padeg_proxy.dll][] has been compiled by **g++** compiler from [MinGW 5.3.0][mingw] using [ib_util.dll][] library from [Firebird 2.5.5][firebird].
 Compile command:
 ```shell
-g++ -shared -o atronah.dll src/atronah.cpp -I ./include lib/ib_utils.dll
+g++ -shared -o padeg_proxy.dll src/padeg_proxy.cpp -I ./include lib/ib_utils.dll
 ```
 
 
@@ -52,7 +52,7 @@ available values:
 declare external function inflect_name
     cstring(1024), smallint
 returns cstring(1024) FREE_IT
-entry_point 'inflect_name' module_name 'atronah';
+entry_point 'inflect_name' module_name 'padeg_proxy';
 ```
 
 **Query to drop declaration:**
@@ -62,7 +62,7 @@ drop external function inflect_name;
 
 
 
-[atronah.dll]: ./lib/atronah.dll
+[padeg_proxy.dll]: ./lib/padeg_proxy.dll
 [Padeg.dll]: ./lib/Padeg.dll
 [ib_util.dll]: ./lib/ib_util.dll
 [mingw]: http://www.mingw.org/

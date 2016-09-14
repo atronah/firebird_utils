@@ -10,31 +10,32 @@ returns(
     , part blob sub_type text
 )
 as
-declare i smallint;
-declare text_len integer;
-declare delimiter_len integer;
+declare pos bigint;
+declare text_len bigint;
+declare delimiter_len smallint;
+declare part_begin bigint;
 begin
     if (coalesce(text, '') = '') then exit;
 
-    i = 0;
+    pos = 0;
     row = 0;
+    part_begin = 1;
     text_len = char_length(text);
     delimiter_len = char_length(delimiter);
 
-    while (i <= text_len + 1) do
+    while (pos <= text_len) do
     begin
-        i = i + 1;
-        if ((substring(text from i for delimiter_len) = delimiter) or (i = text_len)) then
+        pos = pos + 1;
+        if ((substring(text from pos for delimiter_len) = delimiter) or (pos = text_len)) then
         begin
-            if (i = text_len) then i = i + 1;
+            if (pos = text_len) then pos = pos + 1;
 
-            part = cast(substring(text from 1 for i - 1) as varchar(16384));
+            part = substring(text from part_begin for pos - part_begin);
             part = iif(trim_part = 1, trim(part), part);
-            text = substring(text from i + delimiter_len);
+            part_begin = pos + delimiter_len;
 
             row = row + 1;
             suspend;
-            i = 0;
         end
     end
 end^

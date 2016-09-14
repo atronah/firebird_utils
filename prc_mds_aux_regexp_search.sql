@@ -9,7 +9,7 @@ set term ^ ;
     \param[out] match First match
     \param[out] startpos position of \a match in \a text
 */
-create or alter procedure mds_regexp_search(
+create or alter procedure mds_aux_regexp_search(
     pattern blob sub_type text,
     text blob sub_type text,
     syntax smallint = 0,

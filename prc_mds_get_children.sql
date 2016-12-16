@@ -1,18 +1,18 @@
 set term ^ ;
 
--- Выводит все дочерние элементы для указанного current_id или для всех элементов таблицы
+-- Returns all child items of specified item with current_id (or each item of table)
 create or alter procedure mds_get_children(
-	table_name ttext32 -- имя таблицы, по которой производится поиск
-	, id_field ttext32 -- имя поля с идентификатором элементов
-	, parent_field ttext32 -- имя поле с идентификатором родительского элемента
-	, current_id bigint = null -- идентификатор элемента, для которого необходимо найти дочерние (если пустой, то поиск дочерних будет для всех элементов таблицы)
-	, only_leaf smallint = 0 -- выводить в результат только конечные\листовые элементы (у которых нет дочерних)
-	, base_level smallint = 0 -- номер базового уровня, от которого отсчитывать номер дочернего уровня.
+	table_name ttext32 -- name of table in which the items are searched
+	, id_field ttext32 -- name of table field, wherein the item identifier is stored
+	, parent_field ttext32 -- name of table field, wherein the parent item identifier is stored
+	, current_id bigint = null -- current item identifier, for which children are searched (if null - childrean are searched for each element of table)
+	, only_leaf smallint = 0 -- 0 - returns all results, 1 - returns only leaf items (without children)
+	, base_level smallint = 0 -- number of base level which is considered relatively child level number
 )
 returns (
-	id bigint -- идентификатор элемента
-	, parent_id bigint -- идентификатор родительского элемента
-	, child_level smallint -- уровень текущего элемента относительно базового
+	id bigint -- item identified
+	, parent_id bigint -- parent item identified
+	, child_level smallint -- child level number
 )
 as 
 declare stmt tblob;
@@ -33,11 +33,10 @@ begin
 	for execute statement stmt
 	into :id, :parent_id do 
 	begin
-		-- если выводить все узлы (не только конечные), то вывести текущий
 		if (only_leaf = 0) then suspend;
 		
 		has_child = 0;
-		-- перебрать всех детей
+		
 		for select id, parent_id, child_level 
 			from mds_get_children(:table_name
 									, :id_field
@@ -50,8 +49,7 @@ begin
 				has_child = 1;
 				suspend;
 			end
-		-- если выводить только конечные узлы, то вывести текущий лишь в случае отсутствия детей
-		if (only_leaf > 0 and has_child = 0) then suspend;
+		if (only_leaf <> 0 and has_child = 0) then suspend;
 	end
 end^
 

@@ -50,6 +50,8 @@ begin
                 has_child = 1;
                 suspend;
             end
+        -- restore level for current item
+        child_level = base_level;
         -- show current item if it doesn't have children for enabled only_leaf option
         if (only_leaf <> 0 and has_child = 0) then suspend;
     end

@@ -1,5 +1,8 @@
 **EN** | [RU][]
 
+Moved to [GitHub](https://github.com/atronah/firebird_utils)
+=================
+
 Firebird utils
 ==============
 Project for useful things (scripts, queries, udf-librarires) for Firebird.

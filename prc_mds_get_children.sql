@@ -23,11 +23,8 @@ begin
             select
                 ' || :id_field || ' as id,
                 ' || :parent_field || ' as parent_id
-            from ' || :table_name;
-
-    if (current_id is not null)
-        then stmt = stmt || '
-            where ' || :parent_field || ' = ' || :current_id;
+            from ' || :table_name || '
+            where coalesce(' || :parent_field || ', 0) = ' || coalesce(current_id, 0);
 
 
     for execute statement stmt

@@ -1,5 +1,6 @@
 select
     s.mon$sql_text
+    , s.mon$timestamp
     , s.mon$statement_id
     , rs.mon$record_seq_reads as non_indexed_reads
     , rs.mon$record_idx_reads as indexed_reads

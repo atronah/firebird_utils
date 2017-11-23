@@ -6,7 +6,7 @@ create or alter procedure aux_split_text(
     , trim_part smallint = 1
 )
 returns(
-    row smallint
+    idx smallint
     , part blob sub_type text
 )
 as
@@ -18,7 +18,7 @@ begin
     if (coalesce(text, '') = '') then exit;
 
     pos = 0;
-    row = 0;
+    idx = 0;
     part_begin = 1;
     text_len = char_length(text);
     delimiter_len = char_length(delimiter);
@@ -34,7 +34,7 @@ begin
             part = iif(trim_part = 1, trim(part), part);
             part_begin = pos + delimiter_len;
 
-            row = row + 1;
+            idx = idx + 1;
             suspend;
         end
     end

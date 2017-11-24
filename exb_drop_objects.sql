@@ -37,7 +37,6 @@ begin
             'sequence' as type_name, rdb$generator_name as name
         from rdb$generators
         where rdb$system_flag = 0 and trim(rdb$generator_name) not in (null)
-        into type_name, name
         union all
         select
             'index' as type_name, rdb$index_name as name

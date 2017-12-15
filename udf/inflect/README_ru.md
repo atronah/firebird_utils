@@ -36,6 +36,8 @@ Under Windows platforms, shared libraries are commonly referred to as dynamic li
 Данная библиотека является частью проекта, описанного в статье
 [Склонение фамилий, имен и отчеств по падежам Библиотека функций.][padeg_source].
 Текущая версия библиотеки была скачана 2016-09-12 по [ссылке](http://www.delphikingdom.ru/zip/Padeg.zip).
+- [Padeg.dll new](udf/inflect/PadegUC-20171215T100207Z-001.zip) -  of Padeg.dll
+(supports win64 and contains Firebird UDF version of library).
 
 Текущая версия библиотеки [padeg_proxy.dll][] скомпилирована с помощью **g++** компилятора из проекта [MinGW 5.3.0][mingw]
 с использованием библиотеки [ib_util.dll][] из [Firebird 2.5.5][firebird].

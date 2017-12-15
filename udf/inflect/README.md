@@ -30,6 +30,8 @@ This library provides wrapped version (suitable for use in Firebird) of function
 This library is a part of third-party project, which is described in article
 [Склонение фамилий, имен и отчеств по падежам Библиотека функций.][padeg_source].
 Current version of .dll file has been downloaded by [link](http://www.delphikingdom.ru/zip/Padeg.zip) on 2016-09-12.
+- [Padeg.dll new](udf/inflect/PadegUC-20171215T100207Z-001.zip) - archive with new version of Padeg.dll
+(supports win64 and contains Firebird UDF version of library).
 
 Current version of [padeg_proxy.dll][] has been compiled by **g++** compiler from [MinGW 5.3.0][mingw]
 using [ib_util.dll][] library from [Firebird 2.5.5][firebird].

@@ -1,8 +1,5 @@
 [EN][] | **RU**
 
-Перемещено на [GitHub](https://github.com/atronah/firebird_utils)
-======================
-
 Утилиты Firebird
 ================
 

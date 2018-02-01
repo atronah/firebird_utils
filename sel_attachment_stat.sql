@@ -20,4 +20,5 @@ from mon$attachments as a
     left join mon$record_stats as r on a.mon$stat_id = r.mon$stat_id
     left join mon$transactions as tr on tr.mon$attachment_id = a.mon$attachment_id
                                             and tr.mon$state = 1 -- 'STARTED'
+where (coalesce(:transaction_id, 0) = 0 or tr.mon$transaction_id = :transaction_id)
 group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14

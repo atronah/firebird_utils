@@ -6,6 +6,7 @@ create or alter procedure mds_meta_add_field(
     , field_name varchar(31)
     , field_type varchar(31)
     , field_comment varchar(255) = null
+    , field_position smallint = null
 )
 as
 begin
@@ -27,6 +28,12 @@ begin
         then execute statement 'comment on column ' || table_name || '.' || field_name
                                     || ' is ''' || field_comment || ''''
                                     with autonomous transaction;
+    if (coalesce(field_position, 0) > 0) then
+    begin
+        execute statement 'alter table ' || table_name
+                            || ' alter ' || field_name
+                            || ' position ' || field_position;
+    end
 end^
 
 set term ; ^

@@ -28,7 +28,8 @@ begin
         pos = pos + 1;
         if ((substring(text from pos for delimiter_len) = delimiter) or (pos = text_len)) then
         begin
-            if (pos = text_len) then pos = pos + 1;
+            if (pos = text_len and (substring(text from pos for delimiter_len) <> delimiter)) 
+                then pos = pos + 1;
 
             part = substring(text from part_begin for pos - part_begin);
             part = iif(trim_part = 1, trim(part), part);

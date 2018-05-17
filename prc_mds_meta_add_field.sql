@@ -32,7 +32,8 @@ begin
     begin
         execute statement 'alter table ' || table_name
                             || ' alter ' || field_name
-                            || ' position ' || field_position;
+                            || ' position ' || field_position
+                            with autonomous transaction;
     end
 end^
 

@@ -2,7 +2,8 @@ execute block
 returns(
     stm varchar(60),
     tname varchar(128),
-    cnt bigint
+    cnt bigint,
+    delete_stmt varchar(60)
 ) as
 begin
 	for select
@@ -14,6 +15,7 @@ begin
     into :tname do
 	begin
 		stm = 'select count(*) from "' || tname || '"';
+        delete_stmt = 'delete from "' || tname || '";';
 		execute statement :stm into :cnt;
 
 		if (cnt > 0) then suspend;

@@ -23,12 +23,16 @@ begin
         endl = '';
         indent = '';
     end
-    else if (value_type in ('node', 'list')) then
+
+    if (value_type in ('node', 'list')) then
     begin
-        select list(:indent || part, :endl) from aux_split_text(:val, :endl, 0) into val;
+        if (human_readable = 1)
+            then select list(:indent || part, :endl)
+                    from aux_split_text(:val, :endl, 0)
+                    where part <> ''
+                    into val;
+        val = trim(trailing ',' from val);
     end
-
-
 
     if (val is not null or required > 0) then
     begin

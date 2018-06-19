@@ -6,6 +6,7 @@ create or alter procedure mds_json_node(
     , value_type varchar(16) = 'str'
     , required smallint = 0
     , human_readable smallint = 0
+    , add_delimiter smallint = 0
 )
 returns (
     node blob sub_type text
@@ -60,7 +61,8 @@ begin
                                                                 , 'hh:mm:ss'))
                                 || '"'
                     else '"' || val || '"'
-                end;
+                end
+            || iif(add_delimiter > 0, ',' || endl, '');
     end
 
     suspend;

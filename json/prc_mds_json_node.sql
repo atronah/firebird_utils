@@ -64,7 +64,8 @@ begin
                                                                     , :val)
                                                                 , 'hh:mm:ss'))
                                 || '"'
-                    else '"' || replace(val, '"', '\"') || '"'
+                    when 'str' then '"' || replace(val, '"', '\"') || '"'
+                    else val
                 end
             || iif(add_delimiter > 0, ',' || endl, '');
     end

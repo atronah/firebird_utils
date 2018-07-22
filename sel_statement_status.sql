@@ -1,7 +1,7 @@
 select
     s.mon$statement_id as stmt_id,
     s.mon$sql_text as stmt,
-    decode(s.mon$state, 0, 'IDLE', 1, 'ACTIVE') as status,
+    decode(s.mon$state, 0, 'IDLE', 1, 'ACTIVE', s.mon$state) as status,
     s.mon$timestamp as started,
     rs.mon$record_seq_reads as non_indexed_reads,
     rs.mon$record_idx_reads as indexed_reads,

@@ -43,7 +43,9 @@ begin
                     , '"' || name || '": ')
             || case value_type
                     when 'node'
-                        then '{' || endl || val || endl || '}'
+                        then iif(trim(val) starts with '{'
+                                , val
+                                , '{' || endl || val || endl || '}')
                     when 'list'
                         then '[' || endl || val || endl || ']'
                     when 'bool'

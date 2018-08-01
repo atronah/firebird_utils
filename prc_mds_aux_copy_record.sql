@@ -31,6 +31,9 @@ declare stmt blob sub_type text;
 declare endl varchar(2) = '
 ';
 begin
+    error_code = 0;
+    error_text = '';
+
     -- get record fields info to make parts of sql-statement
     for select
             trim(rf.rdb$field_name) as field_name
@@ -76,8 +79,13 @@ begin
     fields_list = trim(both ',' from fields_list);
     values_fields_list = trim(both ',' from values_fields_list);
 
-    if (coalesce(fields_list, '') <> '') then
+    if (coalesce(fields_list, '') = '') then
+    begin
+        error_code = 1;
+        error_text = 'Fields for copying  ' || coalesce(table_name, 'NULL') || ' were not found in table (may be table does not exist)';
+    end
 
+    if (error_code = 0) then
     begin
         -- make statement to execute on `to_db`
         stmt = 'execute block
@@ -102,6 +110,8 @@ begin
                 on external to_db
                 as user to_db_user password to_db_password role current_role;
     end
+
+    suspend;
 end^
 
 set term ; ^

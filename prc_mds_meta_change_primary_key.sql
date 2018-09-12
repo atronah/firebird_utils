@@ -44,7 +44,7 @@ begin
                                                         and trim(upper(rf.rdb$field_name)) = upper(trim(ast.part))
             where coalesce(rdb$null_flag, 0) <> 1
             into field_name
-            do execute statement 'alter table ' || table_name || ' alter ' || field_name || ' SET NOT NULL';
+            do execute statement 'update rdb$relation_fields set rdb$null_flag = 1 where rdb$field_name = upper(''' || field_name || ''') and rdb$relation_name = upper(''' || table_name || ''')';
 
         execute statement 'alter table ' || table_name
                             || ' add constraint ' || constraint_name

@@ -29,8 +29,8 @@ begin
         into existed_constraint_name, existed_fields_list;
 
     -- (re)create primary key constraint if new constraint is different (by fields or name)
-    if (upper(fields_list) <> upper(existed_fields_list)
-        or (upper(constraint_name) <> upper(existed_constraint_name) and no_change_constraint_name = 0)
+    if (upper(fields_list) is distinct from upper(existed_fields_list)
+        or (upper(constraint_name) is distinct from upper(existed_constraint_name) and no_change_constraint_name = 0)
     ) then
     begin
         -- remove existed constraint

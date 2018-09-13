@@ -3,6 +3,7 @@ set term ^ ;
 create or alter procedure get_damerau_levenshtein(
     s1 varchar(1024)
     , s2 varchar(1024)
+    , limit_distance bigint
 )
 returns (
     distance bigint
@@ -83,7 +84,15 @@ begin
                     -- previous distance for "delete" operation in d[row - 1, column]
                     delete_distance = (select cast(part as bigint) from aux_split_text(:prev_row_distances) where idx = (:current_col + 1)) + 1;
                     
-                    current_row_distances = current_row_distances || ',' || minvalue(replace_distance, insert_distance, delete_distance);
+                    distance = minvalue(replace_distance, insert_distance, delete_distance);
+                    
+                    current_row_distances = current_row_distances || ',' || distance;
+                end
+                
+                if (limit_distance is not null and distance > limit_distance) then
+                begin
+                    suspend;
+                    exit;
                 end
                 
                 current_col = current_col + 1;

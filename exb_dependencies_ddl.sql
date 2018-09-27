@@ -8,6 +8,13 @@ declare dependency_type type of column tmp_dependencies.dependency_type;
 declare dependency_field_name type of column tmp_dependencies.dependency_field_name;
 declare dependency_level type of column tmp_dependencies.dependency_level;
 declare is_processed type of column tmp_dependencies.is_processed;
+
+declare slave_dependency_name type of column tmp_dependencies.dependency_name;
+declare slave_dependency_type type of column tmp_dependencies.dependency_type;
+declare slave_dependency_field_name type of column tmp_dependencies.dependency_field_name;
+declare slave_dependency_level type of column tmp_dependencies.dependency_level;
+declare slave_is_processed type of column tmp_dependencies.is_processed;
+
 declare field_list varchar(8192);
 declare skip_routines_dependencies smallint;
 declare endl varchar(2) = '
@@ -91,52 +98,83 @@ begin
             as cursor relation
         do
         begin
-            merge into tmp_dependencies as cur
-                using (
-                        select
-                            rdb$depended_on_type as dependency_type
-                            , rdb$depended_on_name as dependency_name
-                            , coalesce(rdb$field_name, -1) as dependency_field_name
-                        from rdb$dependencies
-                        where rdb$dependent_name = :dependency_name
-                            and rdb$depended_on_name not starts with upper('RDB$')
-                            and rdb$depended_on_type is distinct from 17
-                        union
-                        -- domains of table fields
-                        select
-                            9 as dependency_type -- 9 - column/domain
-                            , rdb$field_source as dependency_name
-                            , -1 as dependency_field_name
-                        from rdb$relation_fields
-                        where rdb$relation_name = :dependency_name
-                            and rdb$field_source not starts with upper('RDB$')
-                        union
-                        -- domains of procedure params
-                        select
-                            9 as dependency_type -- 9 - column/domain
-                            , rdb$field_source as dependency_name
-                            , -1 as dependency_field_name
-                        from rdb$procedure_parameters
-                        where rdb$procedure_name = :dependency_name
-                            and rdb$field_source not starts with upper('RDB$')
+            is_processed = 1;
+            for with slaves as (
+                    select
+                        rdb$depended_on_type as dependency_type
+                        , rdb$depended_on_name as dependency_name
+                        , coalesce(rdb$field_name, -1) as dependency_field_name
+                    from rdb$dependencies
+                    where rdb$dependent_name = :dependency_name
+                        and rdb$depended_on_name not starts with upper('RDB$')
+                        and rdb$depended_on_type is distinct from 17
+                    union
+                    -- domains of table fields
+                    select
+                        9 as dependency_type -- 9 - column/domain
+                        , rdb$field_source as dependency_name
+                        , -1 as dependency_field_name
+                    from rdb$relation_fields
+                    where rdb$relation_name = :dependency_name
+                        and rdb$field_source not starts with upper('RDB$')
+                    union
+                    -- domains of procedure params
+                    select
+                        9 as dependency_type -- 9 - column/domain
+                        , rdb$field_source as dependency_name
+                        , -1 as dependency_field_name
+                    from rdb$procedure_parameters
+                    where rdb$procedure_name = :dependency_name
+                        and rdb$field_source not starts with upper('RDB$')
+                )
+                select distinct
+                        slaves.dependency_type
+                        , slaves.dependency_name
+                        , slaves.dependency_field_name
+                        , slaves.dependency_level
+                        , existed.is_processed as slave_is_processed
+                    from slaves
+                        left join tmp_dependencies as existed on existed.dependency_type = slaves.dependency_type
+                                                                    and existed.dependency_name = slaves.dependency_name
+                                                                    and existed.dependency_field_name = slaves.dependency_field_name
+                    order existed.is_processed desc
+                into slave_dependency_type, slave_dependency_name, slave_dependency_field_name, slave_dependency_level
+                    , slave_is_processed
+            do
+            begin
+                if (slave_is_processed > 0 and slave_dependency_level > dependency_level)
+                    then dependency_level = slave_dependency_level + 1;
+
+                if (slave_is_processed is null) then
+                begin
+                    is_processed = 0;
+                    insert into tmp_dependencies
+                                (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
+                        values  (:slave_dependency_type, :slave_dependency_name, :slave_dependency_field_name
+                                , decode(dependency_type
+                                            , 14, 1 -- 14 - sequence
+                                            , 7, 2 -- 7 - exception
+                                            , 9, 3 -- 9 - column/domain
+                                            , 0, 4 -- 0 - table
+                                            , 1, 5 -- 1 - view
+                                            , 5, 6 -- 5 - procedure
+                                            , 999)
+                                , iif((coalesce(:skip_routines_dependencies, 0) > 0 and :slave_dependency_type in (2, 5)) -- 2 - trigger; 5 - procedure
+                                        , 2 -- skip
+                                        , 0))
+                end
+                else
+            end
+
+
                 ) as upd
             on cur.dependency_type = upd.dependency_type and cur.dependency_name = upd.dependency_name
                 and cur.dependency_field_name is not distinct from upd.dependency_field_name
-            when not matched then insert (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
-                values(upd.dependency_type, upd.dependency_name, upd.dependency_field_name
-                        , decode(dependency_type
-                                    , 14, 1 -- 14 - sequence
-                                    , 7, 2 -- 7 - exception
-                                    , 9, 3 -- 9 - column/domain
-                                    , 0, 4 -- 0 - table
-                                    , 1, 5 -- 1 - view
-                                    , 5, 6 -- 5 - procedure
-                                    , 999)
-                        , iif((coalesce(:skip_routines_dependencies, 0) > 0 and upd.dependency_type in (2, 5)) -- 2 - trigger; 5 - procedure
-                                , -1 -- skip
-                                , 0));
+            when not matched then ;
 
-            update tmp_dependencies set is_processed = 1 where current of relation;
+            update tmp_dependencies
+                set is_processed = (select max)
+                where current of relation;
 
             /*
             trim(decode(
@@ -169,6 +207,7 @@ begin
             , max(is_processed) as is_processed
         from tmp_dependencies
         where dependency_level > 0
+            and is_processed > 0
         group by 1, 2
         order 4 asc
         into dependency_type, dependency_name, field_list, dependency_level, is_processed
@@ -246,7 +285,7 @@ begin
                     || coalesce((select '(' || :endl || '    '
                                         || list(trim(rdb$parameter_name)
                                                     || ' '
-                                                    || iif(:is_processed = -1
+                                                    || iif(:is_processed = 2
                                                             -- dummy type for skipped procedures
                                                             , 'varchar(1) = null'
                                                             , trim(iif(params.rdb$field_source starts with upper('RDB$')
@@ -274,16 +313,16 @@ begin
                                     from rdb$procedure_parameters as params
                                         left join rdb$fields as finfo on finfo.rdb$field_name = params.rdb$field_source
                                     where params.rdb$procedure_name = p.rdb$procedure_name
-                                        and (:is_processed <> -1
+                                        and (:is_processed <> 2
                                             -- for skipped only dummy params with dependencies
-                                            or (:is_processed = -1 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
+                                            or (:is_processed = 2 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
                                         and rdb$parameter_type = 0 -- 1 - output param
                                         )
                                 , '') || :endl
                     || coalesce((select 'returns (' || :endl || '    '
                                         || list(trim(rdb$parameter_name)
                                                     || ' '
-                                                    || iif(:is_processed = -1
+                                                    || iif(:is_processed = 2
                                                             -- dummy type for skipped procedures
                                                             , 'varchar(1) = null'
                                                             , trim(iif(params.rdb$field_source starts with upper('RDB$')
@@ -311,14 +350,14 @@ begin
                                     from rdb$procedure_parameters as params
                                         left join rdb$fields as finfo on finfo.rdb$field_name = params.rdb$field_source
                                     where params.rdb$procedure_name = p.rdb$procedure_name
-                                        and (:is_processed <> -1
+                                        and (:is_processed <> 2
                                             -- for skipped only dummy params with dependencies
-                                            or (:is_processed = -1 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
+                                            or (:is_processed = 2 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
                                         and rdb$parameter_type = 1 -- 1 - output param
                                         )
                                 , '') || :endl
                     || ' as ' || :endl
-                    || iif(:is_processed = -1 -- skipped
+                    || iif(:is_processed = 2 -- skipped
                             , 'begin' || :endl
                                 || iif(:field_list <> '-1', 'suspend;' || :endl, '')
                                 || 'end'

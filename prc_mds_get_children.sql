@@ -5,13 +5,13 @@ create or alter procedure mds_get_children(
     table_name ttext32 -- name of table in which the items are searched
     , id_field ttext32 -- name of table field, wherein the item identifier is stored
     , parent_field ttext32 -- name of table field, wherein the parent item identifier is stored
-    , current_id bigint = null -- current item identifier, for which children are searched (if null - childrean are searched for each element of table)
+    , current_id varchar(1024) = null -- current item identifier, for which children are searched (if null - childrean are searched for each element of table)
     , only_leaf smallint = 0 -- 0 - returns all results, 1 - returns only leaf items (without children)
     , base_level smallint = 0 -- number of base level which is considered relatively child level number
 )
 returns (
-    id bigint -- item identified
-    , parent_id bigint -- parent item identified
+    id varchar(1024) -- item identified
+    , parent_id varchar(1024) -- parent item identified
     , child_level smallint -- child level number
 )
 as
@@ -24,10 +24,10 @@ begin
                 ' || :id_field || ' as id,
                 ' || :parent_field || ' as parent_id
             from ' || :table_name || '
-            where coalesce(' || :parent_field || ', 0) = ' || coalesce(current_id, 0);
+            where coalesce(' || :parent_field || ', 0) = :current_id';
 
 
-    for execute statement stmt
+    for execute statement (stmt) (current_id := :current_id)
     into :id, :parent_id do
     begin
         -- show current item if only_leaf option is disabled

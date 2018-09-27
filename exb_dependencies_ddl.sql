@@ -10,12 +10,10 @@ declare dependency_level type of column tmp_dependencies.dependency_level;
 declare is_processed type of column tmp_dependencies.is_processed;
 declare field_list varchar(8192);
 declare skip_routines_dependencies smallint;
-declare max_level smallint;
 declare endl varchar(2) = '
 ';
 begin
     skip_routines_dependencies = 0;
-    max_level = 0;
 
     /*
     recreate table tmp_dependencies(
@@ -125,9 +123,16 @@ begin
             on cur.dependency_type = upd.dependency_type and cur.dependency_name = upd.dependency_name
                 and cur.dependency_field_name is not distinct from upd.dependency_field_name
             when not matched then insert (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
-                values(upd.dependency_type, upd.dependency_name, upd.dependency_field_name, :dependency_level + 1
-                        , iif((coalesce(:max_level, 0) > 0 and :dependency_level >= :max_level)
-                                or (coalesce(:skip_routines_dependencies, 0) > 0 and upd.dependency_type in (2, 5)) -- 2 - trigger; 5 - procedure
+                values(upd.dependency_type, upd.dependency_name, upd.dependency_field_name
+                        , decode(dependency_type
+                                    , 14, 1 -- 14 - sequence
+                                    , 7, 2 -- 7 - exception
+                                    , 9, 3 -- 9 - column/domain
+                                    , 0, 4 -- 0 - table
+                                    , 1, 5 -- 1 - view
+                                    , 5, 6 -- 5 - procedure
+                                    , 999)
+                        , iif((coalesce(:skip_routines_dependencies, 0) > 0 and upd.dependency_type in (2, 5)) -- 2 - trigger; 5 - procedure
                                 , -1 -- skip
                                 , 0));
 
@@ -155,6 +160,7 @@ begin
         end
     end
 
+
     for select
             dependency_type
             , dependency_name
@@ -162,17 +168,9 @@ begin
             , max(dependency_level) as dependency_level
             , max(is_processed) as is_processed
         from tmp_dependencies
+        where dependency_level > 0
         group by 1, 2
-        order by decode(dependency_type
-                        , 14, 1 -- 14 - sequence
-                        , 7, 2 -- 7 - exception
-                        , 9, 3 -- 9 - column/domain
-                        , 0, 4 -- 0 - table
-                        , 1, 5 -- 1 - view
-                        , 5, 6 -- 5 - procedure
-                        , 2, 7 -- 2 - trigger
-                        )
-            , 4 desc
+        order 4 asc
         into dependency_type, dependency_name, field_list, dependency_level, is_processed
     do
     begin
@@ -378,7 +376,7 @@ begin
             suspend;
         end
     end
-    
+
     stmt = 'commit;';
     suspend;
 end

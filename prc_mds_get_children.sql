@@ -15,7 +15,7 @@ returns (
     , child_level smallint -- child level number
 )
 as
-declare stmt tblob;
+declare stmt blob sub_type text;
 declare has_child smallint;
 begin
     child_level = base_level;

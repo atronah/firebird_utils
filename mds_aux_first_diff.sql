@@ -10,13 +10,13 @@ set term ^ ;
 --     trimmed_string2 = 'ozom'
 -- where first 'o' is context, and 2-4 symols is difference
 create or alter procedure mds_aux_first_diff(
-    string1 tblob -- The first string to compare
-    , string2 tblob -- The second string to compare
+    string1 blob sub_type text -- The first string to compare
+    , string2 blob sub_type text -- The second string to compare
     , context_size smallint = 32 -- How many characters should be displayed before difference
 )
 returns(
-    trimmed_string1 tblob -- cropped first string
-    , trimmed_string2 tblob -- cropped first string
+    trimmed_string1 blob sub_type text -- cropped first string
+    , trimmed_string2 blob sub_type text -- cropped first string
     , diff_position bigint -- position of difference starting
 )
 as

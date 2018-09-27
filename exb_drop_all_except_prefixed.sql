@@ -4,7 +4,7 @@
 execute block
 returns(
     obj_type varchar(16)
-    , stmt tblob
+    , stmt blob sub_type text
     , obj_count bigint
 )
 as

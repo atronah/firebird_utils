@@ -46,7 +46,7 @@ begin
     insert into tmp_dependencies
         (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
         select distinct
-            5 as dependency_type -- 5 - procedure
+            2 as dependency_type -- 2 - trigger
             , rdb$trigger_name as dependency_name
             , -1 as dependency_field_name
             , 0 as dependency_level
@@ -131,18 +131,18 @@ begin
                         slaves.dependency_type
                         , slaves.dependency_name
                         , slaves.dependency_field_name
-                        , slaves.dependency_level
+                        , existed.dependency_level
                         , existed.is_processed as slave_is_processed
                     from slaves
                         left join tmp_dependencies as existed on existed.dependency_type = slaves.dependency_type
                                                                     and existed.dependency_name = slaves.dependency_name
                                                                     and existed.dependency_field_name = slaves.dependency_field_name
-                    order existed.is_processed desc
+                    order by existed.is_processed desc
                 into slave_dependency_type, slave_dependency_name, slave_dependency_field_name, slave_dependency_level
                     , slave_is_processed
             do
             begin
-                if (slave_is_processed > 0 and slave_dependency_level > dependency_level)
+                if (slave_is_processed > 0 and slave_dependency_level >= dependency_level)
                     then dependency_level = slave_dependency_level + 1;
 
                 if (slave_is_processed is null) then
@@ -151,30 +151,30 @@ begin
                     insert into tmp_dependencies
                                 (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
                         values  (:slave_dependency_type, :slave_dependency_name, :slave_dependency_field_name
-                                , decode(dependency_type
+                                -- dependency_level
+                                , decode(:slave_dependency_type
                                             , 14, 1 -- 14 - sequence
                                             , 7, 2 -- 7 - exception
                                             , 9, 3 -- 9 - column/domain
                                             , 0, 4 -- 0 - table
                                             , 1, 5 -- 1 - view
-                                            , 5, 6 -- 5 - procedure
-                                            , 999)
+                                            , 6)
+                                -- is_processed
                                 , iif((coalesce(:skip_routines_dependencies, 0) > 0 and :slave_dependency_type in (2, 5)) -- 2 - trigger; 5 - procedure
                                         , 2 -- skip
-                                        , 0))
+                                        , 0)
+                                );
                 end
-                else
             end
-
-
-                ) as upd
-            on cur.dependency_type = upd.dependency_type and cur.dependency_name = upd.dependency_name
-                and cur.dependency_field_name is not distinct from upd.dependency_field_name
-            when not matched then ;
-
-            update tmp_dependencies
-                set is_processed = (select max)
-                where current of relation;
+            
+            if (is_processed > 0) then
+            begin
+                update tmp_dependencies
+                    set is_processed = :is_processed
+                        -- do not update dependency_level for base items with zero dependency_level
+                        , dependency_level = iif(dependency_level > 0, :dependency_level, 0)
+                    where current of relation;
+            end
 
             /*
             trim(decode(
@@ -209,7 +209,7 @@ begin
         where dependency_level > 0
             and is_processed > 0
         group by 1, 2
-        order 4 asc
+        order by 4 asc
         into dependency_type, dependency_name, field_list, dependency_level, is_processed
     do
     begin

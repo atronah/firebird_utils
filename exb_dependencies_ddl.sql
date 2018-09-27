@@ -36,7 +36,30 @@ begin
             , 0 as dependency_level
             , 0 as is_processed
         from rdb$procedures
-        where rdb$procedure_name starts with 'MDS_';
+        where rdb$procedure_name starts with 'MDS_EIS';
+
+    insert into tmp_dependencies
+        (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
+        select distinct
+            5 as dependency_type -- 5 - procedure
+            , rdb$trigger_name as dependency_name
+            , -1 as dependency_field_name
+            , 0 as dependency_level
+            , 0 as is_processed
+        from rdb$triggers
+        where rdb$trigger_name starts with 'MDS_EIS';
+    
+    insert into tmp_dependencies
+        (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
+        select distinct
+            5 as dependency_type -- 5 - procedure
+            , rdb$relation_name as dependency_name
+            , -1 as dependency_field_name
+            , 0 as dependency_level
+            , 0 as is_processed
+        from rdb$relations
+        where rdb$relation_name starts with 'MDS_EIS'
+            and rdb$relation_type in (0, 1);
     */
     while (exists(select * from tmp_dependencies where coalesce(is_processed, 0) = 0)) do
     begin
@@ -60,6 +83,7 @@ begin
                         from rdb$dependencies
                         where rdb$dependent_name = :dependency_name
                             and rdb$depended_on_name not starts with upper('RDB$')
+                            and rdb$depended_on_type is distinct from 17
                 ) as upd
             on cur.dependency_type = upd.dependency_type and cur.dependency_name = upd.dependency_name
                 and cur.dependency_field_name is not distinct from upd.dependency_field_name
@@ -102,7 +126,16 @@ begin
             , max(is_processed) as is_processed
         from tmp_dependencies
         group by 1, 2
-        order by 4 desc
+        order by decode(dependency_type
+                        , 14, 1 -- 14 - sequence
+                        , 7, 2 -- 7 - exception
+                        , 9, 3 -- 9 - column/domain
+                        , 0, 4 -- 0 - table
+                        , 1, 5 -- 1 - view
+                        , 5, 6 -- 5 - procedure
+                        , 2, 7 -- 2 - trigger
+                        )
+            , 4 desc
         into dependency_type, dependency_name, field_list, dependency_level, is_processed
     do
     begin
@@ -165,7 +198,7 @@ begin
             stmt = null;
 
             select
-                'set term ; ^' || :endl
+                'set term ^ ;' || :endl
                     || 'create procedure ' || trim(rdb$procedure_name)
                     || coalesce((select '(' || :endl || '    '
                                         || list(trim(rdb$parameter_name)
@@ -245,14 +278,58 @@ begin
                     || iif(:is_processed = -1 -- skipped
                             , 'begin' || :endl
                                 || iif(:field_list <> '-1', 'suspend;' || :endl, '')
-                                || 'end^' || :endl
+                                || 'end'
                             , rdb$procedure_source
-                        )
+                        ) || '^' ||  :endl
                     || 'set term ; ^' || :endl
                 from rdb$procedures as p
                 where coalesce(p.rdb$system_flag, 0) = 0
                     and p.rdb$procedure_name = :dependency_name
                 into stmt;
+            suspend;
+        end
+        -- 7 - exception
+        else if(dependency_type = 7) then
+        begin
+            stmt = 'create exception ' || trim(dependency_name)
+                || ' '''
+                || (select rdb$message from rdb$exceptions where rdb$exception_name = :dependency_name)
+                || ''';' || endl;
+            suspend;
+        end
+        -- 9 - column/domain
+        else if(dependency_type = 9) then
+        begin
+            stmt = 'create domain ' || trim(dependency_name)
+                || ' as '
+                || (select
+                        trim(decode(finfo.rdb$field_type
+                                    , 7, 'smallint'
+                                    , 8, 'integer'
+                                    , 10, 'float'
+                                    , 12, 'date'
+                                    , 13, 'time'
+                                    , 14, 'char'
+                                    , 16, 'bigint'
+                                    , 27, 'double precision'
+                                    , 35, 'timestamp'
+                                    , 37, 'varchar'
+                                    , 261, 'blob'))
+                            || trim(iif(finfo.rdb$field_type in (14, 37)
+                                                    , '(' || finfo.rdb$field_length || ')'
+                                                    , ''))
+                            || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
+                            || coalesce(' ' || trim(finfo.rdb$default_source), '')
+                    from rdb$fields as finfo
+                    where finfo.rdb$field_name = :dependency_name
+                    )
+                || ';' || endl;
+            suspend;
+        end
+        -- 14 - sequence
+        else if(dependency_type = 14) then
+        begin
+            stmt = 'create sequence ' || trim(dependency_name) || ';' || endl;
             suspend;
         end
     end

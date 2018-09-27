@@ -64,6 +64,25 @@ begin
     while (exists(select * from tmp_dependencies where coalesce(is_processed, 0) = 0)) do
     begin
         for select
+                /*
+                trim(decode(
+                    , 0, 'table'
+                    , 1, 'view'
+                    , 2, 'trigger'
+                    , 3, 'computed column'
+                    , 4, 'constraint'
+                    , 5, 'procedure'
+                    , 6, 'index'
+                    , 7, 'exception'
+                    , 8, 'user'
+                    , 9, 'column'
+                    , 10, 'index'
+                    , 14, 'sequence'
+                    , 15, 'UDF'
+                    , 17, 'collation'
+                    , null
+                )) as dependency_type
+                */
                 dependency_type
                 , dependency_name
                 , dependency_field_name

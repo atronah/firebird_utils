@@ -14,7 +14,7 @@ declare max_level smallint;
 declare endl varchar(2) = '
 ';
 begin
-    skip_routines_dependencies = 1;
+    skip_routines_dependencies = 0;
     max_level = 0;
 
     /*
@@ -48,7 +48,7 @@ begin
             , 0 as is_processed
         from rdb$triggers
         where rdb$trigger_name starts with 'MDS_EIS';
-    
+
     insert into tmp_dependencies
         (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
         select distinct
@@ -84,6 +84,24 @@ begin
                         where rdb$dependent_name = :dependency_name
                             and rdb$depended_on_name not starts with upper('RDB$')
                             and rdb$depended_on_type is distinct from 17
+                        union
+                        -- domains of table fields
+                        select
+                            9 as dependency_type -- 9 - column/domain
+                            , rdb$field_source as dependency_name
+                            , -1 as dependency_field_name
+                        from rdb$relation_fields
+                        where rdb$relation_name = :dependency_name
+                            and rdb$field_source not starts with upper('RDB$')
+                        union
+                        -- domains of procedure params
+                        select
+                            9 as dependency_type -- 9 - column/domain
+                            , rdb$field_source as dependency_name
+                            , -1 as dependency_field_name
+                        from rdb$procedure_parameters
+                        where rdb$procedure_name = :dependency_name
+                            and rdb$field_source not starts with upper('RDB$')
                 ) as upd
             on cur.dependency_type = upd.dependency_type and cur.dependency_name = upd.dependency_name
                 and cur.dependency_field_name is not distinct from upd.dependency_field_name
@@ -165,13 +183,21 @@ begin
                                     || trim(iif(f.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
                                                     , '(' || finfo.rdb$field_length || ')'
                                                     , ''))
-                                    || iif(coalesce(f.rdb$null_flag, 0) = 1, ' not null', '')
                                     || coalesce(' ' || trim(f.rdb$default_source), '')
+                                    || iif(coalesce(f.rdb$null_flag, 0) = 1, ' not null', '')
                               , :endl || '    , ')
                         from rdb$relation_fields as f
                             left join rdb$fields as finfo on finfo.rdb$field_name = f.rdb$field_source
                         where f.rdb$relation_name = :dependency_name
-                            and (',' || :field_list || ',') like ('%,' || trim(f.rdb$field_name) || ',%'))) || endl
+                            and ((',' || :field_list || ',') like ('%,' || trim(f.rdb$field_name) || ',%') -- or field exists in table dependencies
+                                    or exists(select f.rdb$field_name -- or field is a part of primary key
+                                                from rdb$relation_constraints as c
+                                                    inner join rdb$index_segments as idxs on idxs.rdb$index_name = c.rdb$index_name
+                                                where c.rdb$relation_name = :dependency_name
+                                                    and c.rdb$constraint_type containing 'primary key'
+                                                    and idxs.rdb$field_name = f.rdb$field_name))
+                            )
+                        ) || endl
                     || (select
                             ', constraint ' || trim(max(c.rdb$constraint_name))
                                 || ' primary key (' || list(trim(idxs.rdb$field_name)) || ')'
@@ -231,7 +257,7 @@ begin
                                     from rdb$procedure_parameters as params
                                         left join rdb$fields as finfo on finfo.rdb$field_name = params.rdb$field_source
                                     where params.rdb$procedure_name = p.rdb$procedure_name
-                                        and (:is_processed > 1
+                                        and (:is_processed <> -1
                                             -- for skipped only dummy params with dependencies
                                             or (:is_processed = -1 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
                                         and rdb$parameter_type = 0 -- 1 - output param
@@ -333,4 +359,7 @@ begin
             suspend;
         end
     end
+    
+    stmt = 'commit;';
+    suspend;
 end

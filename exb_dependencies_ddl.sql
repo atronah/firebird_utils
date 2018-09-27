@@ -38,7 +38,7 @@ begin
             5 as dependency_type -- 5 - procedure
             , rdb$procedure_name as dependency_name
             , -1 as dependency_field_name
-            , 0 as dependency_level
+            , -1 as dependency_level
             , 0 as is_processed
         from rdb$procedures
         where rdb$procedure_name starts with 'MDS_EIS';
@@ -49,7 +49,7 @@ begin
             2 as dependency_type -- 2 - trigger
             , rdb$trigger_name as dependency_name
             , -1 as dependency_field_name
-            , 0 as dependency_level
+            , -1 as dependency_level
             , 0 as is_processed
         from rdb$triggers
         where rdb$trigger_name starts with 'MDS_EIS';
@@ -57,10 +57,10 @@ begin
     insert into tmp_dependencies
         (dependency_type, dependency_name, dependency_field_name, dependency_level, is_processed)
         select distinct
-            5 as dependency_type -- 5 - procedure
+            rdb$relation_type as dependency_type -- 0 - table, 1 - view
             , rdb$relation_name as dependency_name
             , -1 as dependency_field_name
-            , 0 as dependency_level
+            , -1 as dependency_level
             , 0 as is_processed
         from rdb$relations
         where rdb$relation_name starts with 'MDS_EIS'
@@ -136,7 +136,10 @@ begin
                     from slaves
                         left join tmp_dependencies as existed on existed.dependency_type = slaves.dependency_type
                                                                     and existed.dependency_name = slaves.dependency_name
-                                                                    and existed.dependency_field_name = slaves.dependency_field_name
+                                                                    and existed.dependency_field_name = iif(existed.dependency_level < 0
+                                                                                                            , existed.dependency_field_name
+                                                                                                            , slaves.dependency_field_name)
+                    where coalesce(existed.dependency_level, 0) >= 0
                     order by existed.is_processed desc
                 into slave_dependency_type, slave_dependency_name, slave_dependency_field_name, slave_dependency_level
                     , slave_is_processed
@@ -171,8 +174,8 @@ begin
             begin
                 update tmp_dependencies
                     set is_processed = :is_processed
-                        -- do not update dependency_level for base items with zero dependency_level
-                        , dependency_level = iif(dependency_level > 0, :dependency_level, 0)
+                        -- do not update dependency_level for base items with negative dependency_level
+                        , dependency_level = iif(dependency_level < 0, dependency_level, :dependency_level)
                     where current of relation;
             end
 
@@ -206,7 +209,7 @@ begin
             , max(dependency_level) as dependency_level
             , max(is_processed) as is_processed
         from tmp_dependencies
-        where dependency_level > 0
+        where dependency_level >= 0
             and is_processed > 0
         group by 1, 2
         order by 4 asc

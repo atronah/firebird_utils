@@ -77,7 +77,7 @@ begin
                     , 3, 'computed column'
                     , 4, 'constraint'
                     , 5, 'procedure'
-                    , 6, 'index'
+                    , 6, 'index expression'
                     , 7, 'exception'
                     , 8, 'user'
                     , 9, 'column'
@@ -168,8 +168,15 @@ begin
                                         , 0)
                                 );
                 end
+                if (exists(select *
+                            from tmp_dependencies
+                            where is_processed = 0
+                                and dependency_level >= 0
+                                and dependency_type = :slave_dependency_type
+                                and dependency_name = :slave_dependency_name)
+                ) then is_processed = 0;
             end
-            
+
             if (is_processed > 0) then
             begin
                 update tmp_dependencies
@@ -216,207 +223,14 @@ begin
         into dependency_type, dependency_name, field_list, dependency_level, is_processed
     do
     begin
-        -- 0 - table
-        if(dependency_type = 0) then
-        begin
-            stmt = 'create table ' || trim(dependency_name) || '(' || :endl || '    '
-                    || iif(:field_list = '-1'
-                        , 'tmp_field smallint'
-                        , (select
-                            list(trim(f.rdb$field_name)
-                                    || ' '
-                                    || trim(iif(f.rdb$field_source starts with upper('RDB$')
-                                                , decode(finfo.rdb$field_type
-                                                        , 7, 'smallint'
-                                                        , 8, 'integer'
-                                                        , 10, 'float'
-                                                        , 12, 'date'
-                                                        , 13, 'time'
-                                                        , 14, 'char'
-                                                        , 16, 'bigint'
-                                                        , 27, 'double precision'
-                                                        , 35, 'timestamp'
-                                                        , 37, 'varchar'
-                                                        , 261, 'blob')
-                                                , f.rdb$field_source))
-                                    || trim(iif(f.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
-                                                    , '(' || finfo.rdb$field_length || ')'
-                                                    , ''))
-                                    || coalesce(' ' || trim(f.rdb$default_source), '')
-                                    || iif(coalesce(f.rdb$null_flag, 0) = 1, ' not null', '')
-                              , :endl || '    , ')
-                        from rdb$relation_fields as f
-                            left join rdb$fields as finfo on finfo.rdb$field_name = f.rdb$field_source
-                        where f.rdb$relation_name = :dependency_name
-                            and ((',' || :field_list || ',') like ('%,' || trim(f.rdb$field_name) || ',%') -- or field exists in table dependencies
-                                    or exists(select f.rdb$field_name -- or field is a part of primary key
-                                                from rdb$relation_constraints as c
-                                                    inner join rdb$index_segments as idxs on idxs.rdb$index_name = c.rdb$index_name
-                                                where c.rdb$relation_name = :dependency_name
-                                                    and c.rdb$constraint_type containing 'primary key'
-                                                    and idxs.rdb$field_name = f.rdb$field_name))
-                            )
-                        ) || endl
-                    || (select
-                            ', constraint ' || trim(max(c.rdb$constraint_name))
-                                || ' primary key (' || list(trim(idxs.rdb$field_name)) || ')'
-                        from rdb$relation_constraints as c
-                            inner join rdb$indices as idx on idx.rdb$index_name = c.rdb$index_name
-                            inner join rdb$index_segments as idxs on idxs.rdb$index_name = idx.rdb$index_name
-                        where c.rdb$relation_name = :dependency_name
-                            and c.rdb$constraint_type containing 'primary key') || endl
-                    || ');' || endl;
-            suspend;
-        end
-        -- 1 - view
-        else if(dependency_type = 1) then
-        begin
-            stmt = 'create view ' || trim(dependency_name) || endl
-                || ' as ' || endl
-                || (select rdb$view_source from rdb$relations where rdb$relation_name = :dependency_name)
-                || ';' || endl;
-            suspend;
-        end
-        -- 5 - procedure
-        else if(dependency_type = 5) then
-        begin
-            stmt = null;
-
-            select
-                'set term ^ ;' || :endl
-                    || 'create procedure ' || trim(rdb$procedure_name)
-                    || coalesce((select '(' || :endl || '    '
-                                        || list(trim(rdb$parameter_name)
-                                                    || ' '
-                                                    || iif(:is_processed = 2
-                                                            -- dummy type for skipped procedures
-                                                            , 'varchar(1) = null'
-                                                            , trim(iif(params.rdb$field_source starts with upper('RDB$')
-                                                                        , decode(finfo.rdb$field_type
-                                                                                , 7, 'smallint'
-                                                                                , 8, 'integer'
-                                                                                , 10, 'float'
-                                                                                , 12, 'date'
-                                                                                , 13, 'time'
-                                                                                , 14, 'char'
-                                                                                , 16, 'bigint'
-                                                                                , 27, 'double precision'
-                                                                                , 35, 'timestamp'
-                                                                                , 37, 'varchar'
-                                                                                , 261, 'blob')
-                                                                        , params.rdb$field_source))
-                                                                || trim(iif(params.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
-                                                                                , '(' || finfo.rdb$field_length || ')'
-                                                                                , ''))
-                                                                || coalesce(' ' || trim(params.rdb$default_source), '')
-
-                                                            )
-                                                , :endl || '    , ') || :endl
-                                        || ')' || :endl
-                                    from rdb$procedure_parameters as params
-                                        left join rdb$fields as finfo on finfo.rdb$field_name = params.rdb$field_source
-                                    where params.rdb$procedure_name = p.rdb$procedure_name
-                                        and (:is_processed <> 2
-                                            -- for skipped only dummy params with dependencies
-                                            or (:is_processed = 2 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
-                                        and rdb$parameter_type = 0 -- 1 - output param
-                                        )
-                                , '') || :endl
-                    || coalesce((select 'returns (' || :endl || '    '
-                                        || list(trim(rdb$parameter_name)
-                                                    || ' '
-                                                    || iif(:is_processed = 2
-                                                            -- dummy type for skipped procedures
-                                                            , 'varchar(1) = null'
-                                                            , trim(iif(params.rdb$field_source starts with upper('RDB$')
-                                                                        , decode(finfo.rdb$field_type
-                                                                                , 7, 'smallint'
-                                                                                , 8, 'integer'
-                                                                                , 10, 'float'
-                                                                                , 12, 'date'
-                                                                                , 13, 'time'
-                                                                                , 14, 'char'
-                                                                                , 16, 'bigint'
-                                                                                , 27, 'double precision'
-                                                                                , 35, 'timestamp'
-                                                                                , 37, 'varchar'
-                                                                                , 261, 'blob')
-                                                                        , params.rdb$field_source))
-                                                                || trim(iif(params.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
-                                                                                , '(' || finfo.rdb$field_length || ')'
-                                                                                , ''))
-                                                                || coalesce(' ' || trim(params.rdb$default_source), '')
-
-                                                            )
-                                                , :endl || '    , ') || :endl
-                                        || ')' || :endl
-                                    from rdb$procedure_parameters as params
-                                        left join rdb$fields as finfo on finfo.rdb$field_name = params.rdb$field_source
-                                    where params.rdb$procedure_name = p.rdb$procedure_name
-                                        and (:is_processed <> 2
-                                            -- for skipped only dummy params with dependencies
-                                            or (:is_processed = 2 and (',' || :field_list || ',') like ('%,' || trim(params.rdb$parameter_name) || ',%')))
-                                        and rdb$parameter_type = 1 -- 1 - output param
-                                        )
-                                , '') || :endl
-                    || ' as ' || :endl
-                    || iif(:is_processed = 2 -- skipped
-                            , 'begin' || :endl
-                                || iif(:field_list <> '-1', 'suspend;' || :endl, '')
-                                || 'end'
-                            , rdb$procedure_source
-                        ) || '^' ||  :endl
-                    || 'set term ; ^' || :endl
-                from rdb$procedures as p
-                where coalesce(p.rdb$system_flag, 0) = 0
-                    and p.rdb$procedure_name = :dependency_name
-                into stmt;
-            suspend;
-        end
-        -- 7 - exception
-        else if(dependency_type = 7) then
-        begin
-            stmt = 'create exception ' || trim(dependency_name)
-                || ' '''
-                || (select rdb$message from rdb$exceptions where rdb$exception_name = :dependency_name)
-                || ''';' || endl;
-            suspend;
-        end
-        -- 9 - column/domain
-        else if(dependency_type = 9) then
-        begin
-            stmt = 'create domain ' || trim(dependency_name)
-                || ' as '
-                || (select
-                        trim(decode(finfo.rdb$field_type
-                                    , 7, 'smallint'
-                                    , 8, 'integer'
-                                    , 10, 'float'
-                                    , 12, 'date'
-                                    , 13, 'time'
-                                    , 14, 'char'
-                                    , 16, 'bigint'
-                                    , 27, 'double precision'
-                                    , 35, 'timestamp'
-                                    , 37, 'varchar'
-                                    , 261, 'blob'))
-                            || trim(iif(finfo.rdb$field_type in (14, 37)
-                                                    , '(' || finfo.rdb$field_length || ')'
-                                                    , ''))
-                            || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
-                            || coalesce(' ' || trim(finfo.rdb$default_source), '')
-                    from rdb$fields as finfo
-                    where finfo.rdb$field_name = :dependency_name
-                    )
-                || ';' || endl;
-            suspend;
-        end
-        -- 14 - sequence
-        else if(dependency_type = 14) then
-        begin
-            stmt = 'create sequence ' || trim(dependency_name) || ';' || endl;
-            suspend;
-        end
+        select stmt
+            from aux_get_create_statement(:dependency_name
+                                            , :dependency_type
+                                            , iif(:field_list = '-1', null, :field_list)
+                                            , iif(:is_processed = 2, 1, 0)
+                                            )
+            into stmt;
+        suspend;
     end
 
     stmt = 'commit;';

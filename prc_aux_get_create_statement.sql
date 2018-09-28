@@ -15,7 +15,7 @@ returns(
 )
 as
 declare field_name varchar(31);
-declare field_type varchar(31);
+declare field_type varchar(128);
 declare field_params varchar(64);
 declare constraint_name varchar(31);
 declare is_begin smallint;
@@ -185,23 +185,25 @@ begin
             is_begin = 1;
             for select
                     trim(rdb$parameter_name)
-                    , trim(iif(p.rdb$field_source starts with upper('RDB$')
-                                    , decode(finfo.rdb$field_type
-                                            , 7, 'smallint'
-                                            , 8, 'integer'
-                                            , 10, 'float'
-                                            , 12, 'date'
-                                            , 13, 'time'
-                                            , 14, 'char'
-                                            , 16, 'bigint'
-                                            , 27, 'double precision'
-                                            , 35, 'timestamp'
-                                            , 37, 'varchar'
-                                            , 261, 'blob')
-                                    , p.rdb$field_source))
-                            || trim(iif(p.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
-                                            , '(' || finfo.rdb$field_length || ')'
-                                            , '')) as field_type
+                    , coalesce('type of column ' || trim(p.rdb$relation_name) || '.' || trim(p.rdb$field_name)
+                                , trim(iif(p.rdb$field_source starts with upper('RDB$')
+                                            , decode(finfo.rdb$field_type
+                                                        , 7, 'smallint'
+                                                        , 8, 'integer'
+                                                        , 10, 'float'
+                                                        , 12, 'date'
+                                                        , 13, 'time'
+                                                        , 14, 'char'
+                                                        , 16, 'bigint'
+                                                        , 27, 'double precision'
+                                                        , 35, 'timestamp'
+                                                        , 37, 'varchar'
+                                                        , 261, 'blob')
+                                            , p.rdb$field_source))
+                                    || trim(iif(p.rdb$field_source starts with upper('RDB$') and finfo.rdb$field_type in (14, 37)
+                                                , '(' || finfo.rdb$field_length || ')'
+                                                , ''))
+                    ) as field_type
                     , coalesce(' ' || trim(coalesce(p.rdb$default_source, finfo.rdb$default_source)), '') as field_params
                 from rdb$procedure_parameters as p
                     left join rdb$fields as finfo on finfo.rdb$field_name = p.rdb$field_source
@@ -221,12 +223,12 @@ begin
                     || field_name || ' ' || field_type || ' ' || field_params || endl;
                 is_begin = 0;
             end
-            if (row_count > 0) then stmt = stmt || ')' || endl;
+            if (row_count > 0) then stmt = stmt || ')';
 
             repeater = repeater + 1;
         end
 
-        stmt = stmt
+        stmt = stmt || endl
             || 'as' || endl
             || iif(create_dummy > 0 -- skipped
                     , 'begin' || endl

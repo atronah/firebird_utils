@@ -18,12 +18,13 @@ declare field_name varchar(31);
 declare field_type varchar(128);
 declare field_params varchar(64);
 declare constraint_name varchar(31);
+declare extra_info varchar(255);
 declare is_begin smallint;
 declare repeater smallint;
 -- constants
 declare TYPE_TABLE smallint = 0;
 declare TYPE_VIEW smallint = 1;
--- declare TYPE_TRIGGER smallint = 2;
+declare TYPE_TRIGGER smallint = 2;
 -- declare TYPE_COMPUTED_COLUMN smallint = 3;
 -- declare TYPE_CONSTRAINT smallint = 4;
 declare TYPE_PROCEDURE smallint = 5;
@@ -44,6 +45,10 @@ begin
     if (object_type is null) then
     begin
         object_type = case
+            when exists(select rdb$trigger_name
+                    from rdb$triggers
+                    where trim(lower(rdb$trigger_name)) = trim(lower(:object_name_in)))
+                then TYPE_TRIGGER
             when exists(select rdb$procedure_name
                     from rdb$procedures
                     where trim(lower(rdb$procedure_name)) = trim(lower(:object_name_in)))
@@ -72,7 +77,7 @@ begin
     object_type_name =  case object_type
                                 when TYPE_TABLE then 'table'
                                 when TYPE_VIEW then 'view'
-                                -- when TYPE_TRIGGER then 'trigger'
+                                when TYPE_TRIGGER then 'trigger'
                                 -- when TYPE_COMPUTED_COLUMN then 'computed column'
                                 -- when TYPE_CONSTRAINT then 'constraint'
                                 when TYPE_PROCEDURE then 'procedure'
@@ -168,6 +173,49 @@ begin
             || ' as ' || endl
             || (select rdb$view_source from rdb$relations where rdb$relation_name = :object_name)
             || ';';
+    end
+    else if(object_type = TYPE_TRIGGER) then
+    begin
+        select
+                ' for '  || rdb$relation_name || :endl
+                || trim(iif(coalesce(rdb$trigger_inactive, 0) > 1, 'inactive', 'active'))
+                || ' ' || trim(case rdb$trigger_type
+                                    when 1 then 'before insert'
+                                    when 2 then 'after insert'
+                                    when 3 then 'before update'
+                                    when 4 then 'after update'
+                                    when 5 then 'before delete'
+                                    when 6 then 'after delete'
+                                    when 17 then 'before insert or update'
+                                    when 18 then 'after insert or update'
+                                    when 25 then 'before insert or delete'
+                                    when 26 then 'after insert or delete'
+                                    when 27 then 'before update or delete'
+                                    when 28 then 'after update or delete'
+                                    when 113 then 'before insert or update or delete'
+                                    when 114 then 'after insert or update or delete'
+                                    when 8192 then 'on connect'
+                                    when 8193 then 'on disconnect'
+                                    when 8194 then 'on transaction start'
+                                    when 8195 then 'on transaction commit'
+                                    when 8196 then 'on transaction rollback'
+                                end)
+                || ' position ' || rdb$trigger_sequence
+            from rdb$triggers
+            where trim(lower(rdb$trigger_name)) = trim(lower(:object_name))
+                and coalesce(rdb$system_flag, 0) = 0
+            into extra_info;
+
+        if (row_count = 0 or extra_info is null) then exit;
+
+        stmt = 'set term ^ ;' || endl
+            || 'create trigger ' || trim(:object_name) ||  extra_info || endl
+            || iif(create_dummy > 0 -- skipped
+                    , 'as' || endl || 'begin' || endl || 'end'
+                    , (select rdb$trigger_source from rdb$triggers where trim(lower(rdb$trigger_name)) = trim(lower(:object_name)))
+                )
+            || '^' || endl
+            || 'set term ; ^';
     end
     else if(object_type = TYPE_PROCEDURE) then
     begin

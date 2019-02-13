@@ -6,6 +6,7 @@ create or alter procedure aux_get_create_statement(
     , only_fields varchar(8192) = null -- if is null - add all fields, otherwise add only specified fields
     , create_dummy smallint = 0
     , add_commit smallint = 0 -- 0 - do not add `commit`; 1 - add `commit` after statement;
+    , alter_mode smallint = 0 -- add (`=0`) or not (otherwise) modificator `or alter`  for creating statement of procedures and triggers
 )
 returns(
     stmt blob sub_type text
@@ -209,7 +210,7 @@ begin
         if (row_count = 0 or extra_info is null) then exit;
 
         stmt = 'set term ^ ;' || endl
-            || 'create trigger ' || trim(:object_name) ||  extra_info || endl
+            || 'create' || iif(alter_mode > 0, ' or alter', '') || ' trigger ' || trim(:object_name) ||  extra_info || endl
             || iif(create_dummy > 0 -- skipped
                     , 'as' || endl || 'begin' || endl || 'end'
                     , (select rdb$trigger_source from rdb$triggers where trim(lower(rdb$trigger_name)) = trim(lower(:object_name)))
@@ -225,7 +226,7 @@ begin
                             and coalesce(rdb$system_flag, 0) = 0)) then exit;
 
         stmt = 'set term ^ ;' || endl
-                || 'create procedure ' || trim(:object_name);
+                || 'create' || trim(iif(alter_mode > 0, ' or alter', '')) || ' procedure ' || trim(:object_name);
 
         repeater = 0;
         while (repeater < 2) do
@@ -298,27 +299,27 @@ begin
     begin
         stmt = 'create domain ' || trim(object_name)
             || ' as '
-            || (select
-                    trim(decode(finfo.rdb$field_type
-                                , 7, 'smallint'
-                                , 8, 'integer'
-                                , 10, 'float'
-                                , 12, 'date'
-                                , 13, 'time'
-                                , 14, 'char'
-                                , 16, 'bigint'
-                                , 27, 'double precision'
-                                , 35, 'timestamp'
-                                , 37, 'varchar'
-                                , 261, 'blob'))
-                        || trim(iif(finfo.rdb$field_type in (14, 37)
-                                                , '(' || finfo.rdb$field_length || ')'
-                                                , ''))
-                        || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
-                        || coalesce(' ' || trim(finfo.rdb$default_source), '')
-                from rdb$fields as finfo
-                where finfo.rdb$field_name = :object_name
-                )
+            || trim((select
+                        trim(decode(finfo.rdb$field_type
+                                    , 7, 'smallint'
+                                    , 8, 'integer'
+                                    , 10, 'float'
+                                    , 12, 'date'
+                                    , 13, 'time'
+                                    , 14, 'char'
+                                    , 16, 'bigint'
+                                    , 27, 'double precision'
+                                    , 35, 'timestamp'
+                                    , 37, 'varchar'
+                                    , 261, 'blob'))
+                            || trim(iif(finfo.rdb$field_type in (14, 37)
+                                                    , '(' || finfo.rdb$field_length || ')'
+                                                    , ''))
+                            || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
+                            || coalesce(' ' || trim(finfo.rdb$default_source), '')
+                    from rdb$fields as finfo
+                    where finfo.rdb$field_name = :object_name
+                    ))
             || ';';
     end
     else if(object_type = TYPE_SEQUENCE) then

@@ -21,7 +21,7 @@ begin
         from (
             select 'table' as obj_type, trim(rdb$relation_name) as obj_name
             from rdb$relations
-            where coalesce(rdb$relation_type, 0) = 0 -- 0 - system or user-defined table
+            where coalesce(rdb$relation_type, 0) in (0, 4, 5) -- 0 - system or user-defined table; 4/5 - GTT (connection/transaction level)
                 and coalesce(rdb$system_flag, 0) = 0
                 and trim(rdb$relation_name) not starts with :name_prefix
             union

@@ -130,7 +130,7 @@ begin
                         or exists(select f.rdb$field_name -- or field is a part of primary key
                                     from rdb$relation_constraints as c
                                         inner join rdb$index_segments as idxs on idxs.rdb$index_name = c.rdb$index_name
-                                    where c.rdb$relation_name = :object_name
+                                    where trim(lower(c.rdb$relation_name)) = trim(lower(:object_name))
                                         and c.rdb$constraint_type containing 'primary key'
                                         and idxs.rdb$field_name = f.rdb$field_name)
                     )
@@ -152,7 +152,7 @@ begin
             from rdb$relation_constraints as c
                 inner join rdb$indices as idx on idx.rdb$index_name = c.rdb$index_name
                 inner join rdb$index_segments as idxs on idxs.rdb$index_name = idx.rdb$index_name
-            where c.rdb$relation_name = :object_name
+            where trim(lower(c.rdb$relation_name)) = trim(lower(:object_name))
                 and c.rdb$constraint_type containing 'primary key'
             order by idxs.rdb$field_position
             into constraint_name, field_name
@@ -172,7 +172,7 @@ begin
     begin
         stmt = 'create view ' || trim(object_name) || endl
             || ' as ' || endl
-            || (select rdb$view_source from rdb$relations where rdb$relation_name = :object_name)
+            || (select rdb$view_source from rdb$relations where trim(lower(rdb$relation_name)) = trim(lower(:object_name)))
             || ';';
     end
     else if(object_type = TYPE_TRIGGER) then
@@ -256,7 +256,7 @@ begin
                     , coalesce(' ' || trim(coalesce(p.rdb$default_source, finfo.rdb$default_source)), '') as field_params
                 from rdb$procedure_parameters as p
                     left join rdb$fields as finfo on finfo.rdb$field_name = p.rdb$field_source
-                where p.rdb$procedure_name = :object_name
+                where trim(lower(p.rdb$procedure_name)) = trim(lower(:object_name))
                                         and (:create_dummy = 0
                                             -- for skipped only dummy params with dependencies
                                             or (:create_dummy > 0 and (',' || :only_fields || ',') like ('%,' || trim(p.rdb$parameter_name) || ',%')))
@@ -292,7 +292,7 @@ begin
     begin
         stmt = 'create exception ' || trim(object_name)
             || ' '''
-            || (select rdb$message from rdb$exceptions where rdb$exception_name = :object_name)
+            || (select rdb$message from rdb$exceptions where trim(lower(rdb$exception_name)) = trim(lower(:object_name)))
             || ''';';
     end
     else if(object_type = TYPE_DOMAIN) then
@@ -318,7 +318,7 @@ begin
                             || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
                             || coalesce(' ' || trim(finfo.rdb$default_source), '')
                     from rdb$fields as finfo
-                    where finfo.rdb$field_name = :object_name
+                    where trim(lower(finfo.rdb$field_name)) = trim(lower(:object_name))
                     ))
             || ';';
     end

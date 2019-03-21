@@ -315,8 +315,8 @@ begin
                             || trim(iif(finfo.rdb$field_type in (14, 37)
                                                     , '(' || finfo.rdb$field_length || ')'
                                                     , ''))
-                            || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
                             || coalesce(' ' || trim(finfo.rdb$default_source), '')
+                            || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
                     from rdb$fields as finfo
                     where trim(lower(finfo.rdb$field_name)) = trim(lower(:object_name))
                     ))

@@ -19,6 +19,7 @@ select a.mon$attachment_id as "Attachment ID"
     , count(distinct iif(tr.mon$lock_timeout = -1, tr.mon$transaction_id, null)) as infinite_waits
     , count(distinct iif(tr.mon$lock_timeout = 0, tr.mon$transaction_id, null)) as no_waits
     , count(distinct iif(tr.mon$lock_timeout > 0, tr.mon$transaction_id, null)) as waits
+    , 'delete from mon$attachments where mon$attachment_id = ' || a.mon$attachment_id as delete_stmt
 from mon$attachments as a
     inner join rdb$character_sets as cs on a.mon$character_set_id = cs.rdb$character_set_id
     left join mon$record_stats as r on a.mon$stat_id = r.mon$stat_id

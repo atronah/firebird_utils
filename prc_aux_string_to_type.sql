@@ -31,6 +31,8 @@ begin
 
     if (source_string is not null) then
     begin
+        val_string = source_string;
+
         if (left(vtype, 3) = 'int' or left(vtype, 4) = 'long') then
         begin
             if (source_string similar to '($+|$-)?[0-9]+' escape '$') then

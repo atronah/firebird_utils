@@ -35,8 +35,10 @@ begin
 
     if (syntax = 1) then
     begin
-        part = '<double_slash>';
+        part = '<double_slash>'; -- surrogate replacer to temporary replace back double slash symbol (`\\`) (after all other replaces it will be replaced to real `\\` - symbol)
+        -- if pattern contain substring which equal surrogate replacer, change surrogate replacer to anonther (until success)
         while (position(part in pattern) > 0) do part = replace(part, '_', '__');
+
         pattern = replace(pattern, '\\', part);
         pattern = replace(pattern, '\s', '[[:WHITESPACE:]]');
         pattern = replace(pattern, '\S', '[^[:WHITESPACE:]]');
@@ -45,13 +47,14 @@ begin
         pattern = replace(pattern, '\d', '[0-9]');
         pattern = replace(pattern, '\D', '[^0-9]');
 
-        dot = '<dot>';
+        dot = '<dot>'; -- surrogate replacer for dot (`.`) symbol
+        -- if pattern contain substring which equal surrogate replacer, change surrogate replacer to anonther (until success)
         while (position(dot in pattern) > 0) do dot = replace(dot, '<', '<<');
         pattern = replace(pattern, '\.', dot);
         pattern = replace(pattern, '.', '_');
         pattern = replace(pattern, dot, '.');
 
-        pattern = replace(pattern, part, '\');
+        pattern = replace(pattern, part, trim('\ ')); -- trim('\ ') used instead '\', because '\' break syntax highlighting in notepad++
     end
 
     len = char_length(text);

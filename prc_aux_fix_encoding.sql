@@ -18,7 +18,7 @@ begin
     text = replace(text, 'РЃ', 'Ё');
     text = replace(text, 'Р–', 'Ж');
     text = replace(text, 'Р—', 'З');
-    text = replace(text, 'Р?', 'И');
+    text = replace(text, 'Р', 'И');
     text = replace(text, 'Р™', 'Й');
     text = replace(text, 'Рљ', 'К');
     text = replace(text, 'Р›', 'Л');

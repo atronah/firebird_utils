@@ -11,6 +11,8 @@
 
 - UDF - Библиотеки пользовательских функций для использования непосредственно из Firebird.
     - [inflect](udf/infclect/README_ru.md) - библиотека для склонения русских слов.
+- Резервное копирование
+    - [db_autobackup.sh](backuping/db_autobackup.md)
 
 
 [EN]: README.md

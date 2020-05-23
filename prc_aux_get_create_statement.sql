@@ -66,10 +66,10 @@ begin
                     from rdb$generators
                     where trim(lower(rdb$generator_name)) = trim(lower(:object_name_in)))
                 then TYPE_SEQUENCE
-            else (select rdb$relation_type
+            else (select coalesce(rdb$relation_type, :TYPE_TABLE)
                     from rdb$relations
                     where trim(lower(rdb$relation_name)) = trim(lower(:object_name_in))
-                        and rdb$relation_type in (:TYPE_TABLE, :TYPE_VIEW))
+                        and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TYPE_TABLE, :TYPE_VIEW))
             end;
     end
 
@@ -140,7 +140,7 @@ begin
         begin
             stmt = stmt
                 || iif(is_begin > 0, '', '    , ')
-                || field_name || ' ' || field_type || ' ' || field_params || endl;
+                || field_name || ' ' || trim(field_type) || ' ' || trim(field_params) || endl;
             is_begin = 0;
         end
         if (row_count = 0) then exit;

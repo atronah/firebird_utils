@@ -41,34 +41,34 @@ declare endl varchar(2) = '
 ';
 begin
     object_type = object_type_in;
-    object_name = object_name_in;
+    object_name = upper(trim(object_name_in));
 
     if (object_type is null) then
     begin
         object_type = case
             when exists(select rdb$trigger_name
                     from rdb$triggers
-                    where trim(lower(rdb$trigger_name)) = trim(lower(:object_name_in)))
+                    where rdb$trigger_name = :object_name)
                 then TYPE_TRIGGER
             when exists(select rdb$procedure_name
                     from rdb$procedures
-                    where trim(lower(rdb$procedure_name)) = trim(lower(:object_name_in)))
+                    where rdb$procedure_name = :object_name)
                 then TYPE_PROCEDURE
             when exists(select RDB$FIELD_NAME
                     from RDB$FIELDS
-                    where trim(lower(RDB$FIELD_NAME)) = trim(lower(:object_name_in)))
+                    where RDB$FIELD_NAME = :object_name)
                 then TYPE_DOMAIN
             when exists(select rdb$exception_name
                     from rdb$exceptions
-                    where trim(lower(rdb$exception_name)) = trim(lower(:object_name_in)))
+                    where rdb$exception_name = :object_name)
                 then TYPE_EXCEPTION
             when exists(select rdb$generator_name
                     from rdb$generators
-                    where trim(lower(rdb$generator_name)) = trim(lower(:object_name_in)))
+                    where rdb$generator_name = :object_name)
                 then TYPE_SEQUENCE
             else (select coalesce(rdb$relation_type, :TYPE_TABLE)
                     from rdb$relations
-                    where trim(lower(rdb$relation_name)) = trim(lower(:object_name_in))
+                    where rdb$relation_name = :object_name
                         and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TYPE_TABLE, :TYPE_VIEW))
             end;
     end
@@ -130,7 +130,7 @@ begin
                         or exists(select f.rdb$field_name -- or field is a part of primary key
                                     from rdb$relation_constraints as c
                                         inner join rdb$index_segments as idxs on idxs.rdb$index_name = c.rdb$index_name
-                                    where trim(lower(c.rdb$relation_name)) = trim(lower(:object_name))
+                                    where c.rdb$relation_name = :object_name
                                         and c.rdb$constraint_type containing 'primary key'
                                         and idxs.rdb$field_name = f.rdb$field_name)
                     )
@@ -152,7 +152,7 @@ begin
             from rdb$relation_constraints as c
                 inner join rdb$indices as idx on idx.rdb$index_name = c.rdb$index_name
                 inner join rdb$index_segments as idxs on idxs.rdb$index_name = idx.rdb$index_name
-            where trim(lower(c.rdb$relation_name)) = trim(lower(:object_name))
+            where c.rdb$relation_name = :object_name
                 and c.rdb$constraint_type containing 'primary key'
             order by idxs.rdb$field_position
             into constraint_name, field_name
@@ -172,7 +172,7 @@ begin
     begin
         stmt = 'create view ' || trim(object_name) || endl
             || ' as ' || endl
-            || (select rdb$view_source from rdb$relations where trim(lower(rdb$relation_name)) = trim(lower(:object_name)))
+            || (select rdb$view_source from rdb$relations where rdb$relation_name = :object_name)
             || ';';
     end
     else if(object_type = TYPE_TRIGGER) then
@@ -203,7 +203,7 @@ begin
                                 end)
                 || ' position ' || rdb$trigger_sequence
             from rdb$triggers
-            where trim(lower(rdb$trigger_name)) = trim(lower(:object_name))
+            where rdb$trigger_name = :object_name
                 and coalesce(rdb$system_flag, 0) = 0
             into extra_info;
 
@@ -213,7 +213,7 @@ begin
             || 'create' || iif(alter_mode > 0, ' or alter', '') || ' trigger ' || trim(:object_name) ||  extra_info || endl
             || iif(create_dummy > 0 -- skipped
                     , 'as' || endl || 'begin' || endl || 'end'
-                    , (select rdb$trigger_source from rdb$triggers where trim(lower(rdb$trigger_name)) = trim(lower(:object_name)))
+                    , (select rdb$trigger_source from rdb$triggers where rdb$trigger_name = :object_name)
                 )
             || '^' || endl
             || 'set term ; ^';
@@ -222,7 +222,7 @@ begin
     begin
         if (not exists(select rdb$procedure_name
                         from rdb$procedures
-                        where trim(lower(rdb$procedure_name)) = trim(lower(:object_name))
+                        where rdb$procedure_name = :object_name
                             and coalesce(rdb$system_flag, 0) = 0)) then exit;
 
         stmt = 'set term ^ ;' || endl
@@ -256,7 +256,7 @@ begin
                     , coalesce(' ' || trim(coalesce(p.rdb$default_source, finfo.rdb$default_source)), '') as field_params
                 from rdb$procedure_parameters as p
                     left join rdb$fields as finfo on finfo.rdb$field_name = p.rdb$field_source
-                where trim(lower(p.rdb$procedure_name)) = trim(lower(:object_name))
+                where p.rdb$procedure_name = :object_name
                                         and (:create_dummy = 0
                                             -- for skipped only dummy params with dependencies
                                             or (:create_dummy > 0 and (',' || :only_fields || ',') like ('%,' || trim(p.rdb$parameter_name) || ',%')))
@@ -283,7 +283,7 @@ begin
                     , 'begin' || endl
                         || iif(stmt containing 'returns(', 'suspend;', '') || endl
                         || 'end'
-                    , (select rdb$procedure_source from rdb$procedures where trim(lower(rdb$procedure_name)) = trim(lower(:object_name)))
+                    , (select rdb$procedure_source from rdb$procedures where rdb$procedure_name = :object_name)
                 )
             || '^' || endl
             || 'set term ; ^';
@@ -292,7 +292,7 @@ begin
     begin
         stmt = 'create exception ' || trim(object_name)
             || ' '''
-            || (select rdb$message from rdb$exceptions where trim(lower(rdb$exception_name)) = trim(lower(:object_name)))
+            || (select rdb$message from rdb$exceptions where rdb$exception_name = :object_name)
             || ''';';
     end
     else if(object_type = TYPE_DOMAIN) then
@@ -318,7 +318,7 @@ begin
                             || coalesce(' ' || trim(finfo.rdb$default_source), '')
                             || iif(coalesce(finfo.rdb$null_flag, 0) = 1, ' not null', '')
                     from rdb$fields as finfo
-                    where trim(lower(finfo.rdb$field_name)) = trim(lower(:object_name))
+                    where finfo.rdb$field_name = :object_name
                     ))
             || ';';
     end

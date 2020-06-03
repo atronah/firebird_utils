@@ -17,7 +17,7 @@ returns(
 as
 declare field_name varchar(31);
 declare field_type varchar(128);
-declare field_params varchar(64);
+declare field_params varchar(4096);
 declare constraint_name varchar(31);
 declare extra_info varchar(255);
 declare is_begin smallint;

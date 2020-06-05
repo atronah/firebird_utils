@@ -1,6 +1,8 @@
 #! /bin/sh
 
 fb_gbak="/opt/firebird/bin/gbak"
+zipper=7za
+error_pattern="\s\+ERROR:"
 
 db_host=127.0.0.1/3050
 db_alias=box_med
@@ -12,7 +14,7 @@ work_dir="/var/db/backups/auto/tmp"
 
 
 # Parse arguments
-while getopts ":g:h:d:u:p:o:w:m:n:" opt; do
+while getopts ":g:h:d:u:p:o:w:m:n:z:e:" opt; do
     case $opt in
         g) fb_gbak="$OPTARG"
         ;;
@@ -32,6 +34,10 @@ while getopts ":g:h:d:u:p:o:w:m:n:" opt; do
         ;;
         n) notifier="$OPTARG"
         ;;
+        z) zipper="$OPTARG"
+        ;;
+        e) error_pattern="$OPTARG"
+        ;;
         \?) echo "Invalid option -$OPTARG" >&2
         echo "usage: db_autobackup.sh [arguments]"
         echo ""
@@ -45,6 +51,7 @@ while getopts ":g:h:d:u:p:o:w:m:n:" opt; do
         echo "-w /var/db/backups/auto/tmp               path to working dir for all temporary files (WARNING: all files in it can be deleted)"
         echo "-m /var/db/backups/scripts/mover.sh       path to script for moving resulting archive (should receive archive fullpath as single argument)"
         echo "-n /var/db/backups/scripts/notifier.sh    path to script for notifying about errors (should receive message as single argument)"
+        echo "-z 7za                                    7z util name or path"
         exit 1
         ;;
     esac
@@ -83,12 +90,12 @@ pushd "$work_dir"
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} into $backup_fullpath"
 $fb_gbak -user $db_user -password $db_password -b -g -v "${db_host}:${db_alias}" "$backup_fullpath" -y "$backup_fullpath".log
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backup has been finished"
-if grep -e "\s\+ERROR:\s\+" "$backup_fullpath".log; then
+if grep -e "$error_pattern" "$backup_fullpath".log; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during backup"
 
     if [[ -n $notifier ]] ; then
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier $notifier"
-        $notifier "Database backup error: $(grep -e "\s\+ERROR:\s\+" "$backup_fullpath".log)"
+        $notifier "Database backup error: $(grep -e "$error_pattern" "$backup_fullpath".log)"
     fi
 
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${backup_fullpath}.log to ${out_dir}/ERROR_$(basename $backup_fullpath).log"
@@ -101,19 +108,19 @@ else
     $fb_gbak -user $db_user -password $db_password -c -v "$backup_fullpath" "$restore_fullpath" -y "$restore_fullpath".log
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
 
-    if grep -e "\s\+ERROR:\s\+" "$restore_fullpath".log; then
+    if grep -e "$error_pattern" "$restore_fullpath".log; then
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during restore"
 
         if [[ -n $notifier ]] ; then
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier $notifier"
-            $notifier "Database restore error: $(grep -e "\s\+ERROR:\s\+" "$restore_fullpath".log)"
+            $notifier "Database restore error: $(grep -e "$error_pattern" "$restore_fullpath".log)"
         fi
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename $restore_fullpath).log"
         mv "$restore_fullpath".log "$out_dir/ERROR_$(basename $restore_fullpath)".log
     else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
-        7z a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+        $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${db_alias}.fdb"
         mv -f "$restore_fullpath" "$db_alias".fdb

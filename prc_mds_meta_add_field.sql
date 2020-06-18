@@ -20,20 +20,16 @@ begin
     then
     begin
         execute statement 'alter table ' || table_name
-                            || ' add ' || field_name || ' ' || field_type
-                            -- without it fails when execute from scrip file (by `isql -i`) after creating table
-                            with autonomous transaction;
+                            || ' add ' || field_name || ' ' || field_type;
     end
     if (field_comment is not null)
         then execute statement 'comment on column ' || table_name || '.' || field_name
-                                    || ' is ''' || field_comment || ''''
-                                    with autonomous transaction;
+                                    || ' is ''' || field_comment || '''';
     if (coalesce(field_position, 0) > 0) then
     begin
         execute statement 'alter table ' || table_name
                             || ' alter ' || field_name
-                            || ' position ' || field_position
-                            with autonomous transaction;
+                            || ' position ' || field_position;
     end
 end^
 

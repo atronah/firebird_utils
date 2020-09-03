@@ -119,27 +119,31 @@ else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename $restore_fullpath).log"
         mv "$restore_fullpath".log "$out_dir/ERROR_$(basename $restore_fullpath)".log
     else
-        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
-        $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
+        ls -lhs "${restore_fullpath}" >> "${out_dir}/$db_alias".sizelog
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"
         mv -f "$restore_fullpath" "${out_dir}/$db_alias".fdb
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath}.log to ${out_dir}/${db_alias}.fdb.log"
         mv -f "$restore_fullpath".log "${out_dir}/$db_alias".fdb.log
-
-        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force moving ${archive_name} to ${out_dir}/${archive_name}"
-        mv -f "$archive_name" "$out_dir/$archive_name"
-
-        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
-        ls -lhs "$db_alias".fdb >> "${out_dir}/$db_alias".sizelog
-
-        if [[ -n $mover ]] ; then
-            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling mover $mover"
-            $mover "$out_dir/$archive_name"
-        fi
     fi
+
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
+    $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force moving ${archive_name} to ${out_dir}/${archive_name}"
+    mv -f "$archive_name" "$out_dir/$archive_name"
+
+    if [[ -n $mover ]] ; then
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling mover $mover"
+        $mover "$out_dir/$archive_name"
+    fi
+
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
+    rm ./*
 fi
+
 
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force removing ${backup_fullpath} and ${backup_fullpath}.log"
 rm -f "$backup_fullpath" "$backup_fullpath".log

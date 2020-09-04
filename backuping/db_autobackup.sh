@@ -144,10 +144,6 @@ else
     rm ./*
 fi
 
-
-echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force removing ${backup_fullpath} and ${backup_fullpath}.log"
-rm -f "$backup_fullpath" "$backup_fullpath".log
-
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore working directory"
 popd
 

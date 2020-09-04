@@ -87,7 +87,12 @@ begin
             time_pattern = '([0-9]{1,2}:[0-9]{1,2}(:[0-9]{1,2})?(.[0-9]+)?)'; -- time like 01:01:01.1111
             time_zone_pattern = '(($+|$-)[0-9]{2}:[0-9]{2})'; -- timezone like +00:00
 
-            if (right(time_temp_val, 6) similar to time_zone_pattern escape '$') then
+            if (right(time_temp_val, 1) = 'Z') then
+            begin
+                time_zone = 0;
+                time_temp_val = left(time_temp_val, char_length(time_temp_val) - 1);
+            end
+            else if (right(time_temp_val, 6) similar to time_zone_pattern escape '$') then
             begin
                 time_zone = cast(left(right(time_temp_val, 6), 3) as smallint);
                 time_temp_val = left(time_temp_val, char_length(time_temp_val) - 6);

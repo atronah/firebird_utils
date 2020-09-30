@@ -210,7 +210,7 @@ begin
         if (row_count = 0 or extra_info is null) then exit;
 
         stmt = 'set term ^ ;' || endl
-            || 'create' || iif(alter_mode > 0, ' or alter', '') || ' trigger ' || trim(:object_name) ||  extra_info || endl
+            || 'create ' || trim(iif(alter_mode > 0, 'or alter', '')) || ' trigger ' || trim(:object_name) ||  extra_info || endl
             || iif(create_dummy > 0 -- skipped
                     , 'as' || endl || 'begin' || endl || 'end'
                     , (select rdb$trigger_source from rdb$triggers where rdb$trigger_name = :object_name)
@@ -226,7 +226,7 @@ begin
                             and coalesce(rdb$system_flag, 0) = 0)) then exit;
 
         stmt = 'set term ^ ;' || endl
-                || 'create' || trim(iif(alter_mode > 0, ' or alter', '')) || ' procedure ' || trim(:object_name);
+                || 'create ' || trim(iif(alter_mode > 0, 'or alter', '')) || ' procedure ' || trim(:object_name);
 
         repeater = 0;
         while (repeater < 2) do

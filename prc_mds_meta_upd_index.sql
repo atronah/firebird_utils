@@ -50,7 +50,7 @@ begin
 
         stmt = stmt || ' (' || :index_expr || ');';
 
-        execute statement stmt with autonomous transaction;
+        execute statement stmt;
     end
 end^
 

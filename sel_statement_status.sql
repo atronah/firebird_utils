@@ -28,9 +28,11 @@ from mon$statements as s
     inner join mon$attachments as a on a.mon$attachment_id = s.mon$attachment_id
     left join mon$io_stats as io on io.mon$stat_id = s.mon$stat_id
 where
-    -- Фильтр по содержимому запроса
+    -- filter by statement query content
     (cast(:sql_part as varchar(1024)) = '' or s.mon$sql_text containing :sql_part)
-    -- фильтр "PID процесса на сервере Firebird"
+    -- filter by PID of process on database server
     and (cast(:server_pid as bigint) is null or a.mon$server_pid = :server_pid)
-    -- фильтр "Только активные"
-    and (coalesce(cast(:only_active as smallint), 0) = 0 or s.mon$state is distinct from 0)
+    -- filters by statement status
+    and (coalesce(cast(:only_idle as smallint), 0) = 0 or s.mon$state = 0)
+    and (coalesce(cast(:only_active as smallint), 0) = 0 or s.mon$state = 1)
+    and (coalesce(cast(:only_stalled as smallint), 0) = 0 or s.mon$state = 2)

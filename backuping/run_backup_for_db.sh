@@ -12,4 +12,11 @@ workdir="/home/backups/temp/$db_alias"
 mover="$scriptpath/$1"; shift
 notifier="$scriptpath/$1"; shift
 
+
+# runs db_autobackup.sh in specific environment for specific datavase
+# example of using:
+# > run_backup_for_db.sh my_db my_mover.sh my_notifier.sh -s
+# runs backup for database `my_db` with skipping restore (option `-s` passed into db_autobackup.sh)
+# with `my_mover.sh` and `my_notifier.sh` as scripts to move result archive and notify about problems
+
 $scriptpath/db_autobackup.sh -d $db_alias -g "$rdb" -h $db_host -u $db_user -p $db_pswd -o "$outdir" -w "$workdir" -m "$mover" -n "$notifier" $@

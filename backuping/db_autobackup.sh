@@ -12,7 +12,6 @@ db_password=masterkey
 out_dir="/var/db/backups/auto"
 work_dir="/var/db/backups/auto/tmp"
 skip_restore="F"
-
 # Parse arguments
 while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s" opt; do
     case $opt in
@@ -93,6 +92,11 @@ if [ ! -d "$work_dir" ]; then
 fi
 
 
+if [ "$(ls -A $work_dir)" ]; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR: $work_dir is not Empty. Clean it before."
+    exit 1
+fi
+
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] changing working directory to: $work_dir"
 pushd "$work_dir"
 
@@ -151,10 +155,10 @@ else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling mover $mover"
         $mover "$out_dir/$archive_name"
     fi
-
-    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
-    rm ./*
 fi
+    
+echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
+rm ./*
 
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore working directory"
 popd

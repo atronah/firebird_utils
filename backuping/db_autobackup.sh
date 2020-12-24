@@ -141,7 +141,7 @@ else
         	mv -f "$restore_fullpath" "${out_dir}/$db_alias".fdb
 
         	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath}.log to ${out_dir}/${db_alias}.fdb.log"
-        	mv -f "$restore_fullpath".log "${out_dir}/$db_alias".fdb.log
+        	cp -f "$restore_fullpath".log "${out_dir}/$db_alias".fdb.log
     	fi
     fi
 
@@ -156,7 +156,7 @@ else
         $mover "$out_dir/$archive_name"
     fi
 fi
-    
+
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
 rm ./*
 

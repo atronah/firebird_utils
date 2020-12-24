@@ -55,8 +55,8 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s" opt; do
         echo "-m /var/db/backups/scripts/mover.sh       path to script for moving resulting archive (should receive archive fullpath as single argument)"
         echo "-n /var/db/backups/scripts/notifier.sh    path to script for notifying about errors (should receive message as single argument)"
         echo "-z 7za                                    7z util name or path"
-        echo "-r /var/db/backups/auto/tmp		directory for restore (work directory if not specified)"
-        echo "-s					skip restore"
+        echo "-r /var/db/backups/auto/tmp		        directory for restore (work directory if not specified)"
+        echo "-s					                    skip restore"
  	exit 1
         ;;
     esac

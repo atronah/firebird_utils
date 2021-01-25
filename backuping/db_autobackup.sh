@@ -38,10 +38,10 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
         ;;
         e) error_pattern="$OPTARG"
         ;;
-	r) restore_dir="$OPTARG"
-	;;
-	s) skip_restore="T"
-	;;
+        r) restore_dir="$OPTARG"
+        ;;
+        s) skip_restore="T"
+        ;;
         c) through_console="T"
         skip_restore="T"
         ;;
@@ -59,10 +59,10 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
         echo "-m /var/db/backups/scripts/mover.sh       path to script for moving resulting archive (should receive archive fullpath as single argument)"
         echo "-n /var/db/backups/scripts/notifier.sh    path to script for notifying about errors (should receive message as single argument)"
         echo "-z 7za                                    7z util name or path"
-        echo "-r /var/db/backups/auto/tmp		        directory for restore (work directory if not specified)"
-        echo "-s					                    skip restore"
- 	exit 1
+        echo "-r /var/db/backups/auto/tmp               directory for restore (work directory if not specified)"
+        echo "-s                                        skip restore"
         echo "-c                                        through console: making backup direct to 7z archive without creating .fbk file"
+    exit 1
         ;;
     esac
 done
@@ -127,33 +127,33 @@ if grep -e "$error_pattern" "$backup_fullpath".log; then
     mv "$backup_fullpath".log "$out_dir/ERROR_$(basename $backup_fullpath)".log
 else
     if [ "$skip_restore" != "T" ]; then
-    	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] removing old ${db_alias}.fdb from $out_dir"
-    	rm -f "${out_dir}/$db_alias".fdb
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] removing old ${db_alias}.fdb from $out_dir"
+        rm -f "${out_dir}/$db_alias".fdb
 
-	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for $backup_fullpath into $restore_fullpath"
-    	$fb_gbak -user $db_user -password $db_password -c -v "$backup_fullpath" "$restore_fullpath" -y "$restore_fullpath".log
-    	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for $backup_fullpath into $restore_fullpath"
+        $fb_gbak -user $db_user -password $db_password -c -v "$backup_fullpath" "$restore_fullpath" -y "$restore_fullpath".log
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
 
-    	if grep -e "$error_pattern" "$restore_fullpath".log; then
-        	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during restore"
+        if grep -e "$error_pattern" "$restore_fullpath".log; then
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during restore"
 
-        	if [[ -n $notifier ]] ; then
-            		echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier $notifier"
-            		$notifier "Database restore error: $(grep -e "$error_pattern" "$restore_fullpath".log)"
-        	fi
+            if [[ -n $notifier ]] ; then
+                    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier $notifier"
+                    $notifier "Database restore error: $(grep -e "$error_pattern" "$restore_fullpath".log)"
+            fi
 
-        	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename $restore_fullpath).log"
-        	mv "$restore_fullpath".log "$out_dir/ERROR_$(basename $restore_fullpath)".log
-    	else
-		echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
-        	ls -lhs "${restore_fullpath}" >> "${out_dir}/$db_alias".sizelog
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename $restore_fullpath).log"
+            mv "$restore_fullpath".log "$out_dir/ERROR_$(basename $restore_fullpath)".log
+        else
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
+            ls -lhs "${restore_fullpath}" >> "${out_dir}/$db_alias".sizelog
 
-        	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"
-        	mv -f "$restore_fullpath" "${out_dir}/$db_alias".fdb
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"
+            mv -f "$restore_fullpath" "${out_dir}/$db_alias".fdb
 
-        	echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath}.log to ${out_dir}/${db_alias}.fdb.log"
-        	cp -f "$restore_fullpath".log "${out_dir}/$db_alias".fdb.log
-    	fi
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath}.log to ${out_dir}/${db_alias}.fdb.log"
+            cp -f "$restore_fullpath".log "${out_dir}/$db_alias".fdb.log
+        fi
     fi
 
     if [ "$through_console" != "T" ]; then

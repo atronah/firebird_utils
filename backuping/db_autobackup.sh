@@ -12,8 +12,9 @@ db_password=masterkey
 out_dir="/var/db/backups/auto"
 work_dir="/var/db/backups/auto/tmp"
 skip_restore="F"
+through_console="F"
 # Parse arguments
-while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s" opt; do
+while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
     case $opt in
         g) fb_gbak="$OPTARG"
         ;;
@@ -41,6 +42,9 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s" opt; do
 	;;
 	s) skip_restore="T"
 	;;
+        c) through_console="T"
+        skip_restore="T"
+        ;;
         \?) echo "Invalid option -$OPTARG" >&2
         echo "usage: db_autobackup.sh [arguments]"
         echo ""
@@ -58,6 +62,7 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s" opt; do
         echo "-r /var/db/backups/auto/tmp		        directory for restore (work directory if not specified)"
         echo "-s					                    skip restore"
  	exit 1
+        echo "-c                                        through console: making backup direct to 7z archive without creating .fbk file"
         ;;
     esac
 done
@@ -100,10 +105,16 @@ fi
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] changing working directory to: $work_dir"
 pushd "$work_dir"
 
+if [ "$through_console" != "T" ]; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} into $backup_fullpath"
+    $fb_gbak -user $db_user -password $db_password -b -g -v "${db_host}:${db_alias}" "$backup_fullpath" -y "$backup_fullpath".log
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backuping has been finished"
+else
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} direct into $archive_name"
+    $fb_gbak -user $db_user -password $db_password -b -g -v "${db_host}:${db_alias}" stdout -y "$backup_fullpath".log | $zipper a -si $archive_name
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backuping and compressing has been finished"
+fi
 
-echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} into $backup_fullpath"
-$fb_gbak -user $db_user -password $db_password -b -g -v "${db_host}:${db_alias}" "$backup_fullpath" -y "$backup_fullpath".log
-echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backup has been finished"
 if grep -e "$error_pattern" "$backup_fullpath".log; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during backup"
 
@@ -145,8 +156,13 @@ else
     	fi
     fi
 
-    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
-    $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+    if [ "$through_console" != "T" ]; then
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
+        $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+    else
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] add m$backup_fullpath.log into archive $archive_name "
+        $zipper a "$archive_name" "$backup_fullpath".log
+    fi
 
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force moving ${archive_name} to ${out_dir}/${archive_name}"
     mv -f "$archive_name" "$out_dir/$archive_name"

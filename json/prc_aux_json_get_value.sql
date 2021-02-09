@@ -6,7 +6,7 @@ returns (
         json_length bigint
         , node_pos bigint
         , value_type varchar(8)
-        , value_pos bigint
+        , value_block_pos bigint
         , value_block blob sub_type text
         , value_block_length bigint
         , val blob sub_type text

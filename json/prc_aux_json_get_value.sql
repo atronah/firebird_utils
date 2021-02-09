@@ -32,7 +32,7 @@ begin
     begin
         -- check that found substring is node name (only colon can be after node name)
         colon_pos = null;
-        value_pos = null;
+        value_block_pos = null;
         value_type = null;
         value_block_length = null;
         value_block = null;
@@ -68,7 +68,7 @@ begin
                 if (c in ('{', '[', '"', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'))
                 then
                 begin
-                    value_pos = pos;
+                    value_block_pos = pos;
                     value_type = trim(decode(c
                                             , '{', 'obj'
                                             , '[', 'lst'
@@ -90,7 +90,7 @@ begin
                 value_end_symbol = decode(value_type
                                             , 'obj', '}'
                                             , 'lst', ']');
-                pos = value_pos + 1;
+                pos = value_block_pos + 1;
                 while (pos < json_length) do
                 begin
                     c = substring(json from pos for 1);
@@ -116,7 +116,7 @@ begin
                     end
                     else if (c = value_end_symbol) then
                     begin
-                        value_block_length = pos - value_pos + 1;
+                        value_block_length = pos - value_block_pos + 1;
                         break;
                     end
 
@@ -127,7 +127,7 @@ begin
             end
             else if (value_type = 'num') then
             begin
-                pos = value_pos;
+                pos = value_block_pos;
                 point_pos = null;
                 value_block_length = 0;
                 while (pos < json_length) do
@@ -153,12 +153,12 @@ begin
             end
             else if (value_type = 'str') then
             begin
-                value_block_length = position('"', json, value_pos + 1) - value_pos + 1;
+                value_block_length = position('"', json, value_block_pos + 1) - value_block_pos + 1;
             end
 
             if (value_block_length is not null) then
             begin
-                value_block = substring(json from value_pos for value_block_length);
+                value_block = substring(json from value_block_pos for value_block_length);
                 if (value_type = 'num') then
                 begin
                     val = value_block;
@@ -173,7 +173,7 @@ begin
             suspend;
         end
 
-        pos_offset = iif(value_block_length > 0, value_pos + value_block_length + 1, node_pos + 1);
+        pos_offset = iif(value_block_length > 0, value_block_pos + value_block_length + 1, node_pos + 1);
         node_pos = position('"' || node_name  || '"', json, pos_offset);
     end
 end

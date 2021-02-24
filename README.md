@@ -13,6 +13,7 @@ Contents
     - [inflect](udf/inflect/README.md) - udf to inflect Russian words.
 - backuping
     - [db_autobackup.sh](backuping/db_autobackup.md)
+- [dbmon](dbmon/README.md) - SQL-scripts for monitoring changes in database structure
 
 
 [RU]: README_ru.md

@@ -99,6 +99,10 @@ fi
 
 if [ "$(ls -A $work_dir)" ]; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR: $work_dir is not Empty. Clean it before."
+    if [[ -n $notifier ]] ; then
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier $notifier"
+        $notifier "ERROR during database backuping: working directory is not empty: $work_dir"
+    fi
     exit 1
 fi
 

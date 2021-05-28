@@ -12,6 +12,8 @@ workdir="/home/backups/temp/$db_alias"
 mover="$scriptpath/$1"; shift
 notifier="$scriptpath/$1"; shift
 
+#echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force removing workdir: ${workdir}"
+#rm -rf "${workdir}"
 
 # runs db_autobackup.sh in specific environment for specific datavase
 # example of using:

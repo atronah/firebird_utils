@@ -164,7 +164,7 @@ else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
         $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
     else
-        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] add m$backup_fullpath.log into archive $archive_name "
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] add $backup_fullpath.log into archive $archive_name "
         $zipper a "$archive_name" "$backup_fullpath".log
     fi
 

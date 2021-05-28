@@ -13,6 +13,7 @@ returns(
     , found_value_start bigint
     , found_value_end bigint
     , updated_dict varchar(4096)
+    , updated_value varchar(255)
 )
 as
 begin
@@ -22,6 +23,7 @@ begin
 
     key_hash = hash(key);
     updated_dict = existed_dict;
+    updated_value = new_value;
 
     found_key_start = position(trim(ITEMS_DELIMITER || key_hash || KEY_VALUE_DELIMITER)
                                 in ITEMS_DELIMITER || existed_dict);

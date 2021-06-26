@@ -175,7 +175,6 @@ begin
                     begin
                         if (error_code > 0) then break;
                         node_path = main_node_path
-                            || '[' || node_index || ']'
                             || node_name;
                         pos = end_pos + 1;
                         suspend;
@@ -207,7 +206,6 @@ begin
                     begin
                         if (error_code > 0) then break;
                         node_path = main_node_path || main_node_name
-                            || '[' || node_index || ']'
                             || node_path;
                         pos = end_pos + 1;
                         suspend;

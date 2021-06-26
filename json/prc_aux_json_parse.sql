@@ -217,7 +217,7 @@ begin
                 if (c = '"') then
                 begin
                     state = AFTER_STRING;
-                    main_node_type = STR;
+                    main_node_type = coalesce(main_node_type, STR);
                     main_end_pos = pos;
                 end
                 -- todo: add support escaped symbols including `\"`

@@ -15,6 +15,7 @@ returns(
     , json blob sub_type text
     , json_length bigint
     , error_code bigint
+    , error_text varchar(1024)
 )
 as
 declare state smallint;
@@ -63,6 +64,7 @@ begin
     CARR_RET = ASCII_CHAR(13);
 
     error_code = 0;
+    error_text = '';
 
     state = NO_STATE;
     json = json_in;
@@ -260,6 +262,8 @@ begin
                 if (c = '"') then state = IN_VALUE_STRING;
                 else
                 begin
+                    if (error_code > 0) then break;
+
                     for select
                             start_pos, end_pos, node_path, node_type, node_content, node_index, error_code
                         from aux_json_parse(:json, :pos)
@@ -317,10 +321,16 @@ begin
                 else error_code = 6;
             end
         end
-        pos = pos + 1;
+        if (error_code = 0) then pos = pos + 1;
     end
 
-    if (error_code > 0) then suspend;
+    if (error_code > 0) then
+    begin
+        error_text = 'c: "' || coalesce(c, 'null') || '", pos: "'
+                        || coalesce(pos, 'null') || '", state: "'
+                        || coalesce(state, 'null') || '"';
+        suspend;
+    end
     else if (state in (FINISH, AFTER_STRING, IN_NUMBER)) then
     begin
         start_pos = main_start_pos;

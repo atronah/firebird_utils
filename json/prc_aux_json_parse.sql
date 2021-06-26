@@ -89,7 +89,7 @@ begin
             begin
                 -- do nothing, skip
             end
-            else if (state in (IN_OBJECT, IN_OBJECT, IN_VALUE_STRING)) then
+            else if (state in (IN_OBJECT, IN_ARRAY, IN_OBJECT, IN_VALUE_STRING)) then
             begin
                 if (char_length(temp_main_node_content) = 16000) then
                 begin

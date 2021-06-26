@@ -116,8 +116,8 @@ begin
                 if (c = '{') then state = IN_OBJECT;
                 else if (c = '[') then state = IN_ARRAY;
                 else if (c = '"') then state = IN_VALUE_STRING;
-                else if (c = '-' and substring(json from pos + 1 for 1) in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-                            or c in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                else if (c = '-' and substring(json from pos + 1 for 1) in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+                            or c in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
                     ) then
                 begin
                     state = IN_NUMBER;
@@ -195,7 +195,7 @@ begin
                 begin
                     state = FINISH; main_end_pos = pos;
                 end
-                else if (c in ('"', '-', 't', 'f', 'n', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) then
+                else if (c in ('"', '-', 't', 'f', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
                     if (error_code > 0) then break;
 
@@ -303,7 +303,7 @@ begin
                     main_end_pos = pos - 1;
                     main_node_type = NUM;
                 end
-                else if (c in ('.', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) then
+                else if (c in ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
                     if (c = '.' and HAS_DOT > 0) then error_code = 5;
                     else

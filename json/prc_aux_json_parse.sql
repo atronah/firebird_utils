@@ -64,7 +64,7 @@ begin
     CARR_RET = ASCII_CHAR(13);
 
     error_code = 0;
-    error_text = '';
+    error_text = null;
 
     state = NO_STATE;
     json = json_in;
@@ -170,9 +170,9 @@ begin
                     if (error_code > 0) then break;
 
                     for select
-                            start_pos, end_pos, node_path, node_type, node_name, node_content, error_code
+                            start_pos, end_pos, node_path, node_type, node_name, node_content, error_code, error_text
                         from aux_json_parse(:json, :pos)
-                        into start_pos, end_pos, node_path, node_type, node_name, node_content, error_code
+                        into start_pos, end_pos, node_path, node_type, node_name, node_content, error_code, error_text
                     do
                     begin
                         if (error_code > 0) then break;
@@ -201,9 +201,9 @@ begin
 
                     node_name = main_node_name;
                     for select
-                            start_pos, end_pos, node_path, node_type, node_content, error_code
+                            start_pos, end_pos, node_path, node_type, node_content, error_code, error_text
                         from aux_json_parse(:json, :pos)
-                        into start_pos, end_pos, node_path, node_type, node_content, error_code
+                        into start_pos, end_pos, node_path, node_type, node_content, error_code, error_text
                     do
                     begin
                         if (error_code > 0) then break;
@@ -265,9 +265,9 @@ begin
                     if (error_code > 0) then break;
 
                     for select
-                            start_pos, end_pos, node_path, node_type, node_content, node_index, error_code
+                            start_pos, end_pos, node_path, node_type, node_content, node_index, error_code, error_text
                         from aux_json_parse(:json, :pos)
-                        into start_pos, end_pos, node_path, node_type, node_content, node_index, error_code
+                        into start_pos, end_pos, node_path, node_type, node_content, node_index, error_code, error_text
                     do
                     begin
                         if (error_code > 0) then break;
@@ -326,9 +326,10 @@ begin
 
     if (error_code > 0) then
     begin
-        error_text = 'c: "' || coalesce(c, 'null') || '", pos: "'
-                        || coalesce(pos, 'null') || '", state: "'
-                        || coalesce(state, 'null') || '"';
+        error_text = coalesce(error_text
+                                , 'c: "' || coalesce(c, 'null') || '", pos: "'
+                                || coalesce(pos, 'null') || '", state: "'
+                                || coalesce(state, 'null') || '"');
         suspend;
     end
     else if (state in (FINISH, AFTER_STRING, IN_NUMBER)) then

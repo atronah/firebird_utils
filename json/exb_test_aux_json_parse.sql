@@ -17,6 +17,22 @@ declare success_count bigint;
 begin
     total_count = 0;
     success_count = 0;
+
+    -- -- -- --
+    -- -- -- --
+    test_json = ASCII_CHAR(13) || ASCII_CHAR(10) || '   "just text" ';
+    test_name = 'just text';
+    -- start_pos|end_pos|node_path|node_index|node_type|node_name|node_content|error_code
+    expected_value = '6|16|/|0|string||just text|0';
+    resulting_value = (select first 1
+                             start_pos || '|' || end_pos || '|' || node_path || '|' || node_index || '|' || node_type || '|' || node_name || '|' || node_content || '|' || error_code
+                            from aux_json_parse(:test_json));
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
+
     -- -- -- --
     -- -- -- --
     test_json = '"text_param": "text value"';

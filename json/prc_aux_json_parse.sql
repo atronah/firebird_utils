@@ -159,7 +159,11 @@ begin
             end
             else if (state = IN_OBJECT) then
             begin
-                if (c = '"') then
+                if (c = '}') then
+                begin
+                    state = FINISH; main_end_pos = pos;
+                end
+                else if (c = '"') then
                 begin
                     if (error_code > 0) then break;
 
@@ -186,7 +190,11 @@ begin
             end
             else if (state = IN_ARRAY) then
             begin
-                if (c in ('"', '-', 't', 'f', 'n', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) then
+                if (c = ']') then
+                begin
+                    state = FINISH; main_end_pos = pos;
+                end
+                else if (c in ('"', '-', 't', 'f', 'n', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) then
                 begin
                     if (error_code > 0) then break;
 

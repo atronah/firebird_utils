@@ -307,9 +307,18 @@ begin
     if (error_code <> NO_ERROR) then
     begin
         error_text = coalesce(error_text
-                                , 'c: "' || coalesce(c, 'null') || '", pos: "'
+                                , decode(error_code
+                                        , UNEXPECTED_WHITESPACE_ERROR, 'Unexpected whitespace. '
+                                        , UNEXPECTED_NODE_ERROR, 'Unexpected node start symbol. '
+                                        , UNEXPECTED_SYMBOL_IN_OBJECT_ERR, 'Unexpected symbol inside object value. '
+                                        , UNEXPECTED_SYMBOL_IN_ARRAY_ERR, 'Unexpected symbol inside array value. '
+                                        , UNEXPECTED_SYMBOL_AFTER_STR_ERR, 'Unexpected symbol after string value. '
+                                        , UNEXPECTED_SYMBOL_IN_NUMBER_ERR, 'Unexpected symbol in number value.'
+                                        , 'Unknown error code' || coalesce(error_code, 'null') || '. ')
+                                || 'c: "' || coalesce(c, 'null') || '", pos: "'
                                 || coalesce(pos, 'null') || '", state: "'
-                                || coalesce(state, 'null') || '"');
+                                || coalesce(state, 'null') || '", near text (-4, +4): "'
+                                || substring(json from maxvalue(0, pos - 4) for 8));
         suspend;
     end
     else if (state in (FINISH, AFTER_STRING, IN_NUMBER)) then
@@ -323,6 +332,17 @@ begin
         node_path = '/';
         val = substring(json from value_start for value_end - value_start + 1);
         node_index = coalesce(root_node_index, 0);
+        suspend;
+    end
+
+    when any do
+    begin
+        error_code = 99;
+        error_text = 'Unknown dbms error. '
+                    || 'c: "' || coalesce(c, 'null') || '", pos: "'
+                    || coalesce(pos, 'null') || '", state: "'
+                    || coalesce(state, 'null') || '", near text (-4, +4): "'
+                    || substring(json from maxvalue(0, pos - 4) for 8);
         suspend;
     end
 end^

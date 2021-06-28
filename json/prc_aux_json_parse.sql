@@ -363,6 +363,7 @@ end^
 
 set term ; ^
 
+comment on procedure aux_json_parse is 'Parses all nodes from source JSON including nested';
 comment on parameter aux_json_parse.json_in is 'Source JSON for parsing';
 comment on parameter aux_json_parse.init_pos is 'Position in source JSON from which the parsing will be (for nested parsing)';
 comment on parameter aux_json_parse.root_name is 'Name of node passed as source JSON  (for nested parsing)';

@@ -356,7 +356,7 @@ begin
                     || 'c: "' || coalesce(c, 'null') || '", pos: "'
                     || coalesce(pos, 'null') || '", state: "'
                     || coalesce(state, 'null') || '", near text (-4, +4): "'
-                    || substring(json from maxvalue(0, pos - 4) for 8);
+                    || substring(json from maxvalue(1, pos - 4) for 8);
         suspend;
     end
 end^

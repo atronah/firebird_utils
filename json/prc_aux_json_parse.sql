@@ -362,3 +362,8 @@ begin
 end^
 
 set term ; ^
+
+comment on parameter aux_json_parse.json_in is 'Source JSON for parsing';
+comment on parameter aux_json_parse.init_pos is 'Position in source JSON from which the parsing will be (for nested parsing)';
+comment on parameter aux_json_parse.root_name is 'Name of node passed as source JSON  (for nested parsing)';
+comment on parameter aux_json_parse.root_node_index is 'Index of parsed node in the parent node (for nested parsing)';

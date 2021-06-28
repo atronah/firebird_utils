@@ -18,7 +18,7 @@ returns(
     , val blob sub_type text
     , json blob sub_type text
     , json_length bigint
-    , is_root smallint
+    , level bigint
     , error_code bigint
     , error_text varchar(1024)
 )
@@ -34,6 +34,7 @@ declare root_value_end bigint;
 declare root_node_path varchar(4096);
 declare root_value_type varchar(8);
 declare root_val blob sub_type text;
+declare root_level bigint;
 declare temp_root_val varchar(16000);
 declare is_sub_root smallint;
 -- Constants
@@ -83,7 +84,7 @@ begin
     error_code = NO_ERROR;
     error_text = null;
 
-    is_root = 0;
+    root_level = 0;
     is_comma_required = 0;
 
     state = NO_STATE;
@@ -186,15 +187,16 @@ begin
                     root_value_start = coalesce(root_value_start, pos);
 
                     for select
-                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                         from aux_json_parse(:json, :pos, null, :child_node_index)
-                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                     do
                     begin
                         node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
                         if (error_code <> NO_ERROR) then break;
                         pos = node_end;
                         root_value_end = node_end;
+                        level = level + 1;
                         suspend;
                     end
                     is_comma_required = 1;
@@ -220,15 +222,16 @@ begin
                     root_value_start = coalesce(root_value_start, pos);
 
                     for select
-                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                         from aux_json_parse(:json, :pos, null, :child_node_index)
-                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                     do
                     begin
                         if (error_code <> NO_ERROR) then break;
                         node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
                         pos = node_end;
                         root_value_end = node_end;
+                        level = level + 1;
                         suspend;
                     end
                     is_comma_required = 1;
@@ -262,9 +265,9 @@ begin
                     root_name = substring(json from root_value_start for root_value_end - root_value_start + 1);
                     root_value_start = null; root_value_end = null;
                     for select
-                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, is_root
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                         from aux_json_parse(:json, :pos + 1, :root_name)
-                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, is_sub_root
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
                     do
                     begin
                         if (error_code <> NO_ERROR) then break;
@@ -272,7 +275,7 @@ begin
                         root_value_end = coalesce(value_end, node_end);
                         pos = node_end;
 
-                        if (is_sub_root > 0) then
+                        if (level = root_level) then
                         begin
                             root_value_start = value_start;
                             root_value_end = value_end;
@@ -313,7 +316,6 @@ begin
         end
     end
 
-    is_root = 1;
     if (error_code <> NO_ERROR) then
     begin
         error_text = coalesce(error_text
@@ -339,6 +341,7 @@ begin
         value_start = coalesce(root_value_start, node_start);
         value_end = coalesce(root_value_end, node_end);
         value_type = root_value_type;
+        level = root_level;
         name = nullif(root_name, '');
         node_path = '/';
         val = substring(json from value_start for value_end - value_start + 1);

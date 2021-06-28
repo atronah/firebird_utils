@@ -62,6 +62,14 @@ declare VALUE_NULL varchar(8) = 'null';
 -- -- Flags
 declare HAS_DOT smallint = 0;
 declare ALREADY_SUSPENDED smallint = 0;
+-- -- Errors
+declare NO_ERROR bigint = 0;
+declare UNEXPECTED_WHITESPACE_ERROR bigint = 1;
+declare UNEXPECTED_NODE_ERROR bigint = 2;
+declare UNEXPECTED_SYMBOL_IN_OBJECT_ERR bigint = 3;
+declare UNEXPECTED_SYMBOL_IN_ARRAY_ERR bigint = 4;
+declare UNEXPECTED_SYMBOL_AFTER_STR_ERR bigint = 5;
+declare UNEXPECTED_SYMBOL_IN_NUMBER_ERR bigint = 6;
 -- root_node_start
 -- root_node_end
 begin
@@ -70,7 +78,7 @@ begin
     NEW_LINE = ASCII_CHAR(10);
     CARR_RET = ASCII_CHAR(13);
 
-    error_code = 0;
+    error_code = NO_ERROR;
     error_text = null;
 
     is_root = 0;
@@ -91,7 +99,7 @@ begin
 
     pos = coalesce(init_pos - 1, 0);
     while (pos < json_length
-            and error_code = 0
+            and error_code = NO_ERROR
             and state is distinct from FINISH) do
     begin
         pos = pos + 1;
@@ -111,7 +119,7 @@ begin
             begin
                 state = FINISH;
             end
-            else error_code = 1;
+            else error_code = UNEXPECTED_WHITESPACE_ERROR;
         end
         else
         begin
@@ -146,9 +154,9 @@ begin
                     state = FINISH; root_node_end = pos + char_length(VALUE_NULL) - 1;
                     root_value_type = VALUE_NULL;
                 end
-                else error_code = 2;
+                else error_code = UNEXPECTED_NODE_ERROR;
 
-                if (error_code = 0) then
+                if (error_code = NO_ERROR) then
                 begin
                     root_node_start = pos;
                     child_node_index = 0;
@@ -169,7 +177,7 @@ begin
                 end
                 else if (c = '"') then
                 begin
-                    if (error_code > 0) then break;
+                    if (error_code <> NO_ERROR) then break;
 
                     root_value_start = coalesce(root_value_start, pos);
 
@@ -181,7 +189,7 @@ begin
                     begin
                         -- node_path = coalesce(nullif(trim(root_node_path || coalesce(root_name, '')), '') || '.', '') || node_path;
                         node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
-                        if (error_code > 0) then break;
+                        if (error_code <> NO_ERROR) then break;
                         pos = node_end;
                         root_value_end = node_end;
                         suspend;
@@ -191,7 +199,7 @@ begin
                 begin
                     child_node_index = child_node_index + 1;
                 end
-                else error_code = 3;
+                else error_code = UNEXPECTED_SYMBOL_IN_OBJECT_ERR;
             end
             else if (state = IN_ARRAY) then
             begin
@@ -201,7 +209,7 @@ begin
                 end
                 else if (c in ('{', '"', '-', 't', 'f', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
-                    if (error_code > 0) then break;
+                    if (error_code <> NO_ERROR) then break;
 
                     root_value_start = coalesce(root_value_start, pos);
 
@@ -211,7 +219,7 @@ begin
                         into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                     do
                     begin
-                        if (error_code > 0) then break;
+                        if (error_code <> NO_ERROR) then break;
                         node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
                         pos = node_end;
                         root_value_end = node_end;
@@ -223,7 +231,7 @@ begin
                     child_node_index = child_node_index + 1;
                     root_value_end = pos;
                 end
-                else error_code = 4;
+                else error_code = UNEXPECTED_SYMBOL_IN_ARRAY_ERR;
             end
             else if (state = IN_STRING) then
             begin
@@ -251,7 +259,7 @@ begin
                         into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, is_sub_root
                     do
                     begin
-                        if (error_code > 0) then break;
+                        if (error_code <> NO_ERROR) then break;
                         root_value_start = coalesce(root_value_start, value_start);
                         root_value_end = coalesce(value_end, node_end);
                         pos = node_end;
@@ -271,7 +279,7 @@ begin
                     state = FINISH;
                     -- root_node_end = pos - 1;
                 end
-                else error_code = 5;
+                else error_code = UNEXPECTED_SYMBOL_AFTER_STR_ERR;
             end
             else if (state = IN_NUMBER) then
             begin
@@ -290,13 +298,13 @@ begin
                         root_node_end = pos;
                     end
                 end
-                else error_code = 6;
+                else error_code = UNEXPECTED_SYMBOL_IN_NUMBER_ERR;
             end
         end
     end
 
     is_root = 1;
-    if (error_code > 0) then
+    if (error_code <> NO_ERROR) then
     begin
         error_text = coalesce(error_text
                                 , 'c: "' || coalesce(c, 'null') || '", pos: "'

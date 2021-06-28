@@ -3,22 +3,22 @@ set term ^ ;
 create or alter procedure aux_json_parse(
     json_in blob sub_type text
     , init_pos bigint = null
-    , main_node_name varchar(255) = null
-    , main_node_index bigint = null
+    , root_name varchar(255) = null
+    , root_node_index bigint = null
 )
 returns(
-    start_pos bigint
-    , end_pos bigint
+    node_start bigint
+    , node_end bigint
     , value_start bigint
     , value_end bigint
     , node_path varchar(4096)
     , node_index bigint
-    , node_type varchar(8)
-    , node_name varchar(1024)
-    , node_content blob sub_type text
+    , value_type varchar(8)
+    , name varchar(1024)
+    , val blob sub_type text
     , json blob sub_type text
     , json_length bigint
-    , is_main smallint
+    , is_root smallint
     , error_code bigint
     , error_text varchar(1024)
 )
@@ -27,15 +27,15 @@ declare state smallint;
 declare pos bigint;
 declare c varchar(1);
 declare child_node_index bigint;
-declare main_start_pos bigint;
-declare main_end_pos bigint;
-declare main_value_start bigint;
-declare main_value_end bigint;
-declare main_node_path varchar(4096);
-declare main_node_type varchar(8);
-declare main_node_content blob sub_type text;
-declare temp_main_node_content varchar(16000);
-declare is_sub_main smallint;
+declare root_node_start bigint;
+declare root_node_end bigint;
+declare root_value_start bigint;
+declare root_value_end bigint;
+declare root_node_path varchar(4096);
+declare root_value_type varchar(8);
+declare root_val blob sub_type text;
+declare temp_root_val varchar(16000);
+declare is_sub_root smallint;
 -- Constants
 -- -- special symbols
 declare SPACE varchar(1);
@@ -62,8 +62,8 @@ declare VALUE_NULL varchar(8) = 'null';
 -- -- Flags
 declare HAS_DOT smallint = 0;
 declare ALREADY_SUSPENDED smallint = 0;
--- main_start_pos
--- main_end_pos
+-- root_node_start
+-- root_node_end
 begin
     SPACE = ASCII_CHAR(32);
     HRZ_TAB = ASCII_CHAR(9);
@@ -73,21 +73,21 @@ begin
     error_code = 0;
     error_text = null;
 
-    is_main = 0;
+    is_root = 0;
 
     state = NO_STATE;
     json = json_in;
     json_length = char_length(json);
 
-    main_start_pos = null;
-    main_end_pos = null;
-    main_value_start = null;
-    main_value_end = null;
-    main_node_index = coalesce(main_node_index, 0);
-    main_node_type = null;
-    main_node_name = coalesce(main_node_name, '');
-    main_node_content = '';
-    temp_main_node_content = '';
+    root_node_start = null;
+    root_node_end = null;
+    root_value_start = null;
+    root_value_end = null;
+    root_node_index = coalesce(root_node_index, 0);
+    root_value_type = null;
+    root_name = coalesce(root_name, '');
+    root_val = '';
+    temp_root_val = '';
 
     pos = coalesce(init_pos - 1, 0);
     while (pos < json_length
@@ -105,7 +105,7 @@ begin
             end
             else if (state in (IN_STRING)) then
             begin
-                main_value_end = pos;
+                root_value_end = pos;
             end
             else if (state = IN_NUMBER) then
             begin
@@ -124,35 +124,35 @@ begin
                             or c in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
                     ) then
                 begin
-                    state = IN_NUMBER; main_end_pos = pos;
+                    state = IN_NUMBER; root_node_end = pos;
                 end
                 else if (c = left(VALUE_TRUE, 1)
                             and substring(json from pos for char_length(VALUE_TRUE)) = VALUE_TRUE) then
                 begin
-                    main_node_content = VALUE_TRUE;
-                    state = FINISH; main_end_pos = pos + char_length(VALUE_TRUE) - 1;
-                    main_node_type = VALUE_TRUE;
+                    root_val = VALUE_TRUE;
+                    state = FINISH; root_node_end = pos + char_length(VALUE_TRUE) - 1;
+                    root_value_type = VALUE_TRUE;
                 end
                 else if (c = left(VALUE_FALSE, 1)
                             and substring(json from pos for char_length(VALUE_FALSE)) = VALUE_FALSE) then
                 begin
-                    main_node_content = VALUE_FALSE;
-                    state = FINISH; main_end_pos = pos + char_length(VALUE_FALSE) - 1;
+                    root_val = VALUE_FALSE;
+                    state = FINISH; root_node_end = pos + char_length(VALUE_FALSE) - 1;
                 end
                 else if (c = left(VALUE_NULL, 1)
                         and substring(json from pos for char_length(VALUE_NULL)) = VALUE_NULL) then
                 begin
-                    main_node_content = VALUE_NULL;
-                    state = FINISH; main_end_pos = pos + char_length(VALUE_NULL) - 1;
-                    main_node_type = VALUE_NULL;
+                    root_val = VALUE_NULL;
+                    state = FINISH; root_node_end = pos + char_length(VALUE_NULL) - 1;
+                    root_value_type = VALUE_NULL;
                 end
                 else error_code = 2;
 
                 if (error_code = 0) then
                 begin
-                    main_start_pos = pos;
+                    root_node_start = pos;
                     child_node_index = 0;
-                    main_node_type = coalesce(main_node_type
+                    root_value_type = coalesce(root_value_type
                                                 , case
                                                         when c = '{' then OBJ
                                                         when c = '[' then ARR
@@ -165,25 +165,25 @@ begin
             begin
                 if (c = '}') then
                 begin
-                    state = FINISH; main_end_pos = pos;
+                    state = FINISH; root_node_end = pos;
                 end
                 else if (c = '"') then
                 begin
                     if (error_code > 0) then break;
 
-                    main_value_start = coalesce(main_value_start, pos);
+                    root_value_start = coalesce(root_value_start, pos);
 
                     for select
-                            start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                         from aux_json_parse(:json, :pos, null, :child_node_index)
-                        into start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                     do
                     begin
-                        -- node_path = coalesce(nullif(trim(main_node_path || coalesce(main_node_name, '')), '') || '.', '') || node_path;
-                        node_path = '/' || coalesce(nullif(main_node_name, ''), '-') || node_path;
+                        -- node_path = coalesce(nullif(trim(root_node_path || coalesce(root_name, '')), '') || '.', '') || node_path;
+                        node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
                         if (error_code > 0) then break;
-                        pos = end_pos;
-                        main_value_end = end_pos;
+                        pos = node_end;
+                        root_value_end = node_end;
                         suspend;
                     end
                 end
@@ -197,31 +197,31 @@ begin
             begin
                 if (c = ']') then
                 begin
-                    state = FINISH; main_end_pos = pos;
+                    state = FINISH; root_node_end = pos;
                 end
                 else if (c in ('{', '"', '-', 't', 'f', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
                     if (error_code > 0) then break;
 
-                    main_value_start = coalesce(main_value_start, pos);
+                    root_value_start = coalesce(root_value_start, pos);
 
                     for select
-                            start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                         from aux_json_parse(:json, :pos, null, :child_node_index)
-                        into start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                     do
                     begin
                         if (error_code > 0) then break;
-                        node_path = '/' || coalesce(nullif(main_node_name, ''), '-') || node_path;
-                        pos = end_pos;
-                        main_value_end = end_pos;
+                        node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
+                        pos = node_end;
+                        root_value_end = node_end;
                         suspend;
                     end
                 end
                 else if (c = ',') then
                 begin
                     child_node_index = child_node_index + 1;
-                    main_value_end = pos;
+                    root_value_end = pos;
                 end
                 else error_code = 4;
             end
@@ -230,46 +230,46 @@ begin
                 if (c = '"') then
                 begin
                     state = AFTER_STRING;
-                    main_end_pos = pos;
+                    root_node_end = pos;
                 end
                 -- todo: add support escaped symbols including `\"`
                 else
                 begin
-                    main_value_start = coalesce(main_value_start, pos);
-                    main_value_end = pos;
+                    root_value_start = coalesce(root_value_start, pos);
+                    root_value_end = pos;
                 end
             end
             else if (state = AFTER_STRING) then
             begin
                 if (c = ':') then
                 begin
-                    main_node_name = substring(json from main_value_start for main_value_end - main_value_start + 1);
-                    main_value_start = null; main_value_end = null;
+                    root_name = substring(json from root_value_start for root_value_end - root_value_start + 1);
+                    root_value_start = null; root_value_end = null;
                     for select
-                            start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text, is_main
-                        from aux_json_parse(:json, :pos + 1, :main_node_name)
-                        into start_pos, end_pos, value_start, value_end, node_path, node_index, node_type, node_name, node_content, error_code, error_text, is_sub_main
+                            node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, is_root
+                        from aux_json_parse(:json, :pos + 1, :root_name)
+                        into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, is_sub_root
                     do
                     begin
                         if (error_code > 0) then break;
-                        main_value_start = coalesce(main_value_start, value_start);
-                        main_value_end = coalesce(value_end, end_pos);
-                        pos = end_pos;
+                        root_value_start = coalesce(root_value_start, value_start);
+                        root_value_end = coalesce(value_end, node_end);
+                        pos = node_end;
 
-                        if (is_sub_main > 0) then
+                        if (is_sub_root > 0) then
                         begin
-                            main_value_start = value_start;
-                            main_value_end = value_end;
-                            main_node_type = node_type;
+                            root_value_start = value_start;
+                            root_value_end = value_end;
+                            root_value_type = value_type;
                         end
                         else suspend;
                     end
-                    state = FINISH; main_end_pos = pos;
+                    state = FINISH; root_node_end = pos;
                 end
                 else if (c in (',', ']', '}')) then
                 begin
                     state = FINISH;
-                    -- main_end_pos = pos - 1;
+                    -- root_node_end = pos - 1;
                 end
                 else error_code = 5;
             end
@@ -278,7 +278,7 @@ begin
                 if (c in (',', ']', '}')) then
                 begin
                     state = FINISH;
-                    main_node_type = NUM;
+                    root_value_type = NUM;
                 end
                 else if (c in ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
@@ -286,8 +286,8 @@ begin
                     else
                     begin
                         if (c = '.') then HAS_DOT = 1;
-                        main_value_end = pos;
-                        main_end_pos = pos;
+                        root_value_end = pos;
+                        root_node_end = pos;
                     end
                 end
                 else error_code = 6;
@@ -295,7 +295,7 @@ begin
         end
     end
 
-    is_main = 1;
+    is_root = 1;
     if (error_code > 0) then
     begin
         error_text = coalesce(error_text
@@ -306,15 +306,15 @@ begin
     end
     else if (state in (FINISH, AFTER_STRING, IN_NUMBER)) then
     begin
-        start_pos = main_start_pos;
-        end_pos = main_end_pos;
-        value_start = coalesce(main_value_start, start_pos);
-        value_end = coalesce(main_value_end, end_pos);
-        node_type = main_node_type;
-        node_name = nullif(main_node_name, '');
+        node_start = root_node_start;
+        node_end = root_node_end;
+        value_start = coalesce(root_value_start, node_start);
+        value_end = coalesce(root_value_end, node_end);
+        value_type = root_value_type;
+        name = nullif(root_name, '');
         node_path = '/';
-        node_content = substring(json from value_start for value_end - value_start + 1);
-        node_index = coalesce(main_node_index, 0);
+        val = substring(json from value_start for value_end - value_start + 1);
+        node_index = coalesce(root_node_index, 0);
         suspend;
     end
 end^

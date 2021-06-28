@@ -22,10 +22,10 @@ begin
     -- -- -- --
     test_json = ASCII_CHAR(13) || ASCII_CHAR(10) || '   "just text" ';
     test_name = 'just text';
-    -- start_pos|end_pos|node_path|node_index|node_type|node_name|node_content|error_code
+    -- node_start|node_end|node_path|node_index|value_type|name|val|error_code
     expected_value = '6|16|/|0|string|null|just text|0';
     resulting_value = (select first 1
-                             start_pos || '|' || end_pos || '|' || node_path || '|' || node_index || '|' || node_type || '|' || coalesce(node_name, 'null') || '|' || node_content || '|' || error_code
+                             node_start || '|' || node_end || '|' || node_path || '|' || node_index || '|' || value_type || '|' || coalesce(name, 'null') || '|' || val || '|' || error_code
                             from aux_json_parse(:test_json));
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
@@ -44,10 +44,10 @@ begin
     suspend;
 
     test_name = 'param: values';
-    -- start_pos|end_pos|node_path|node_index|node_type|node_name|node_content|error_code
+    -- node_start|node_end|node_path|node_index|value_type|name|val|error_code
     expected_value = '1|26|/|0|string|text_param|text value|0';
     resulting_value = (select first 1
-                             start_pos || '|' || end_pos || '|' || node_path || '|' || node_index || '|' || node_type || '|' || node_name || '|' || node_content || '|' || error_code
+                             node_start || '|' || node_end || '|' || node_path || '|' || node_index || '|' || value_type || '|' || name || '|' || val || '|' || error_code
                             from aux_json_parse(:test_json));
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
@@ -78,42 +78,42 @@ begin
                         },
                     }';
     test_name = 'complex: some param';
-    -- left(4)|right(4)|node_path|node_index|node_type|node_name|node_content|error_code
+    -- left(4)|right(4)|node_path|node_index|value_type|name|val|error_code
     expected_value = '"som|lue"|/-/|0|string|some param|text value|0';
     resulting_value = (select first 1
-                            substring(:test_json from start_pos for 4)
-                                || '|' || substring(:test_json from end_pos - 4 + 1 for 4)
-                                || '|' || node_path || '|' || node_index || '|' || node_type
-                                || '|' || node_name || '|' || node_content || '|' || error_code
+                            substring(:test_json from node_start for 4)
+                                || '|' || substring(:test_json from node_end - 4 + 1 for 4)
+                                || '|' || node_path || '|' || node_index || '|' || value_type
+                                || '|' || name || '|' || val || '|' || error_code
                             from aux_json_parse(:test_json));
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'complex: my array';
-    -- node_type|left(node_content, 4)|right(node_content,4)|error_code
+    -- value_type|left(val, 4)|right(val,4)|error_code
     expected_value = '"my |   ]|/-/|1|array|"arr| 3",|0';
     resulting_value = (select first 1
-                            substring(:test_json from start_pos for 4)
-                                || '|' || substring(:test_json from end_pos - 4 + 1 for 4)
+                            substring(:test_json from node_start for 4)
+                                || '|' || substring(:test_json from node_end - 4 + 1 for 4)
                                 || '|' || node_path || '|' || node_index
-                                || '|' || node_type
-                                || '|' || left(node_content, 4)
-                                || '|' || right(node_content, 4)
+                                || '|' || value_type
+                                || '|' || left(val, 4)
+                                || '|' || right(val, 4)
                                 || '|' || error_code
                             from aux_json_parse(:test_json)
-                        where node_name = 'my array');
+                        where name = 'my array');
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'complex: object as array item';
-    -- left(4)|right(4)|node_path|node_index|node_type|left(node_content, 4)|right(node_content,4)|error_code
+    -- left(4)|right(4)|node_path|node_index|value_type|left(val, 4)|right(val,4)|error_code
     expected_value = 'object|"obj|ple"|0';
     resulting_value = (select first 1
-                                node_type
-                                || '|' || left(node_content, 4)
-                                || '|' || right(node_content, 4)
+                                value_type
+                                || '|' || left(val, 4)
+                                || '|' || right(val, 4)
                                 || '|' || error_code
                             from aux_json_parse(:test_json)
                         where node_path = '/-/some object/object.obj/mixed array/' and node_index = 2);

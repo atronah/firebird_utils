@@ -177,6 +177,24 @@ begin
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;
+    test_name = 'nested obj/arr: levels';
+    expected_value = '0|1|2|3|4|5|6|7|7|8|8|8';
+    resulting_value = (select distinct level from aux_json_parse(:test_json) where node_path = '/') -- 0
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/') -- 1
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/') -- 2
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/') -- 3
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/') -- 4
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/') -- 5
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/') -- 6
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.1/') -- 7
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/') -- 7
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/-/') -- 8
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where name starts with 'd.1.')
+                    || '|' || (select distinct level from aux_json_parse(:test_json) where name starts with 'd.2.')
+                    ;
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
 
     test_name = 'nested obj/arr: count';
     -- 1 root `object`

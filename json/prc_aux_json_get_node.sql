@@ -31,31 +31,29 @@ declare prefix varchar(255);
 declare suffix varchar(255);
 begin
     for select
-            node_path, node_index, node_start, node_end, name, value_type, val, level
+            node_path, node_start, node_end, level
         from aux_json_parse(:json_in)
+        where name = :key_param and val = :key_value
         order by level desc
-        into node_path, node_index, node_start, node_end, node_name, value_type, val, node_level
+        into key_node_path, key_node_start, key_node_end, key_node_level
     do
     begin
-        if (node_name = key_param and val = key_value) then
+        for select
+                node_path, node_index, level, node_start, node_end, name
+                , value_type, val
+            from aux_json_parse(:json_in)
+            where node_start < :key_node_start
+                    and node_end > :key_node_end
+                    and level = (:key_node_level - 1)
+            into node_path, node_index, node_level, node_start, node_end, node_name
+                , node_type, node_value
+        do
         begin
-            key_node_path = node_path;
-            key_node_start = node_start;
-            key_node_end = node_end;
-            key_node_level = node_level;
-
-        end
-        else if (key_node_start > node_start and key_node_end < node_end
-                and node_level = key_node_level - 1
-        ) then
-        begin
-            node_value = val; val = null;
-            node_type = value_type; value_type = null;
             prefix = decode(node_type, 'string', '"', 'object', '{', 'array', '[', '');
             suffix = decode(node_type, 'string', '"', 'object', '}', 'array', ']', '');
-            node = :prefix || :node_value || :suffix;
+            node = prefix || node_value || suffix;
 
-            value_name = null;
+            value_type = null; val = null; value_name = null;
             for select name, value_type, val
                 from aux_json_parse(:node)
                 where name = :value_param
@@ -63,7 +61,6 @@ begin
             do suspend;
             if (row_count = 0) then suspend;
         end
-        if (key_node_level is not null and (node_level - key_node_level) > 1) then exit;
     end
 end^
 

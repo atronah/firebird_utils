@@ -130,6 +130,64 @@ begin
     suspend;
     -- -- -- --
     -- -- -- --
+
+
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+        "a": {
+            "b": {
+                "c": {
+                    "d": [
+                        {"d.1": [{"d.1.1": -1}, {"d.1.2": 0}, {"d.1.3": 1.0}]}
+                        {"d.2": [{"d.2.1": -1.1}, {"d.2.2": 0.3}, {"d.2.3": 1.5}]}
+                    ]
+                },
+            },
+        },
+    }';
+    test_name = 'nested obj/arr: d.1.* zero indexes, values and types, and common path';
+    expected_value = '0:-1:number|0:0:number|0:1.0:number|/-/a/b/c/d/-/d.1/-/|3';
+    resulting_value = (select node_index || ':' || val || ':' || value_type from aux_json_parse(:test_json) where name = 'd.1.1')
+                || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.1.2')
+                || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.1.3')
+                || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.1.')
+                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.1/' and value_type = 'object' and val like '"%":%' );
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+
+    test_name = 'nested obj/arr: d.2.* zero indexes, values and types';
+    expected_value = '0:-1.1:number|0:0.3:number|0:1.5:number|/-/a/b/c/d/-/d.2/-/|3';
+    resulting_value = (select node_index || ':' || val || ':' || value_type from aux_json_parse(:test_json) where name = 'd.2.1')
+                || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.2.2')
+                || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.2.3')
+                || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.2.')
+                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/' and value_type = 'object' and val like '"%":%');
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+
+    test_name = 'nested obj/arr: d array';
+    expected_value = '0:array';
+    resulting_value = (select node_index || ':' || value_type from aux_json_parse(:test_json) where node_path = '/-/a/b/c/' and name = 'd');
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+
+    test_name = 'nested obj/arr: count';
+    -- 1 root `object`
+    -- 1 `object` "a" + 1 `object` "b" + 1 `object` "c"
+    -- 1 `array` "d" + 2 `object` inside `array` "d"
+    -- 1 `array` "d.1" + 3 `object` inside `array` "d.1" + 3 `string:num` of each item in `array` "d.1"
+    -- 1 `array` "d.2" + 3 `object` inside `array` "d.2" + 3 `string:num` of each item in `array` "d.2"
+    expected_value = 21;
+    resulting_value = (select count(*) from aux_json_parse(:test_json));
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
 end^
 
 set term ; ^

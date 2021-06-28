@@ -62,6 +62,7 @@ declare VALUE_NULL varchar(8) = 'null';
 -- -- Flags
 declare HAS_DOT smallint = 0;
 declare ALREADY_SUSPENDED smallint = 0;
+declare is_comma_required smallint = 0;
 -- -- Errors
 declare NO_ERROR bigint = 0;
 declare UNEXPECTED_WHITESPACE_ERROR bigint = 1;
@@ -70,6 +71,7 @@ declare UNEXPECTED_SYMBOL_IN_OBJECT_ERR bigint = 3;
 declare UNEXPECTED_SYMBOL_IN_ARRAY_ERR bigint = 4;
 declare UNEXPECTED_SYMBOL_AFTER_STR_ERR bigint = 5;
 declare UNEXPECTED_SYMBOL_IN_NUMBER_ERR bigint = 6;
+declare COMMA_MISSED_ERROR bigint = 7;
 -- root_node_start
 -- root_node_end
 begin
@@ -82,6 +84,7 @@ begin
     error_text = null;
 
     is_root = 0;
+    is_comma_required = 0;
 
     state = NO_STATE;
     json = json_in;
@@ -177,6 +180,7 @@ begin
                 end
                 else if (c = '"') then
                 begin
+                    if (is_comma_required > 0) then error_code = COMMA_MISSED_ERROR;
                     if (error_code <> NO_ERROR) then break;
 
                     root_value_start = coalesce(root_value_start, pos);
@@ -193,9 +197,11 @@ begin
                         root_value_end = node_end;
                         suspend;
                     end
+                    is_comma_required = 1;
                 end
                 else if (c = ',') then
                 begin
+                    is_comma_required = 0;
                     child_node_index = child_node_index + 1;
                 end
                 else error_code = UNEXPECTED_SYMBOL_IN_OBJECT_ERR;
@@ -208,6 +214,7 @@ begin
                 end
                 else if (c in ('{', '"', '-', 't', 'f', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
+                    if (is_comma_required > 0) then error_code = COMMA_MISSED_ERROR;
                     if (error_code <> NO_ERROR) then break;
 
                     root_value_start = coalesce(root_value_start, pos);
@@ -224,9 +231,11 @@ begin
                         root_value_end = node_end;
                         suspend;
                     end
+                    is_comma_required = 1;
                 end
                 else if (c = ',') then
                 begin
+                    is_comma_required = 0;
                     child_node_index = child_node_index + 1;
                     root_value_end = pos;
                 end
@@ -273,6 +282,9 @@ begin
                     end
                     state = FINISH; root_node_end = pos;
                 end
+                else if (root_name is not null
+                            and c in ('"', '{', '[', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-')
+                    ) then error_code = COMMA_MISSED_ERROR;
                 else if (c in (',', ']', '}')) then
                 begin
                     state = FINISH;
@@ -312,6 +324,7 @@ begin
                                         , UNEXPECTED_SYMBOL_IN_ARRAY_ERR, 'Unexpected symbol inside array value. '
                                         , UNEXPECTED_SYMBOL_AFTER_STR_ERR, 'Unexpected symbol after string value. '
                                         , UNEXPECTED_SYMBOL_IN_NUMBER_ERR, 'Unexpected symbol in number value.'
+                                        , COMMA_MISSED_ERROR, 'Missed comma. '
                                         , 'Unknown error code' || coalesce(error_code, 'null') || '. ')
                                 || 'c: "' || coalesce(c, 'null') || '", pos: "'
                                 || coalesce(pos, 'null') || '", state: "'

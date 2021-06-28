@@ -58,6 +58,48 @@ begin
     suspend;
     -- -- -- --
     -- -- -- --
+
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+        "items": {
+            "itemA": {"type" : "A", "value": "A value"},
+            "itemB": {"type" : "B", "value": "B value"},
+            "itemC": {"type" : "C", "value": "C value"},
+        }
+    }';
+    test_name = 'node name';
+    expected_value = 'itemA:A value|itemB:B value|itemC:C value';
+    resulting_value = coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'A', 'value')), 'null')
+            || '|' || coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'B', 'value')), 'null')
+            || '|' || coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'C', 'value')), 'null');
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
+
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+        "items": [
+            {"type" : "A", "value": "A value"},
+            {"type" : "B", "value": "B1 value"},
+            {"type" : "B", "value": "B2 value"},
+            {"type" : "C", "value": "C value"},
+        ]
+    }';
+    test_name = 'few nodes with the same type';
+    expected_value = '2|B1 value|B2 value';
+    resulting_value = (select count(*) from aux_json_get_node(:test_json, 'type', 'B'))
+                || '|' || coalesce((select val from aux_json_get_node(:test_json, 'type', 'B', 'value') where node_index = 1), 'null')
+                || '|' || coalesce((select val from aux_json_get_node(:test_json, 'type', 'B', 'value') where node_index = 2), 'null');
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+
+    -- -- -- --
+    -- -- -- --
 end^
 
 set term ; ^

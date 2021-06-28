@@ -187,7 +187,6 @@ begin
                         into node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text
                     do
                     begin
-                        -- node_path = coalesce(nullif(trim(root_node_path || coalesce(root_name, '')), '') || '.', '') || node_path;
                         node_path = '/' || coalesce(nullif(root_name, ''), '-') || node_path;
                         if (error_code <> NO_ERROR) then break;
                         pos = node_end;
@@ -277,7 +276,6 @@ begin
                 else if (c in (',', ']', '}')) then
                 begin
                     state = FINISH;
-                    -- root_node_end = pos - 1;
                 end
                 else error_code = UNEXPECTED_SYMBOL_AFTER_STR_ERR;
             end

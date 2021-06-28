@@ -3,7 +3,7 @@ set term ^ ;
 create or alter procedure aux_json_parse(
     json_in blob sub_type text
     , init_pos bigint = null
-    , root_name varchar(255) = null
+    , root_name varchar(1024) = null
     , root_node_index bigint = null
 )
 returns(

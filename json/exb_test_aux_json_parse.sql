@@ -191,6 +191,34 @@ begin
     suspend;
     -- -- -- --
     -- -- -- --
+
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+        "a": [1 2 3]
+    }';
+    test_name = 'commas between array items';
+    expected_value = '1';
+    resulting_value = (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/' and val = 1 and error_code = 7);
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
+
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+        "a": {"z": "y" "f": "e"}
+    }';
+    test_name = 'commas between array items';
+    expected_value = '1';
+    resulting_value = (select count(*) from aux_json_parse(:test_json) where error_code = 7);
+    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
+    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
 end^
 
 set term ; ^

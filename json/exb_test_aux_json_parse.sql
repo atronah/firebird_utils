@@ -139,7 +139,7 @@ begin
             "b": {
                 "c": {
                     "d": [
-                        {"d.1": [{"d.1.1": -1}, {"d.1.2": 0}, {"d.1.3": 1.0}]}
+                        {"d.1": [{"d.1.1": -1}, {"d.1.2": 0}, {"d.1.3": 1.0}]},
                         {"d.2": [{"d.2.1": -1.1}, {"d.2.2": 0.3}, {"d.2.3": 1.5}]}
                     ]
                 },
@@ -169,8 +169,11 @@ begin
     suspend;
 
     test_name = 'nested obj/arr: d array';
-    expected_value = '0:array';
-    resulting_value = (select node_index || ':' || value_type from aux_json_parse(:test_json) where node_path = '/-/a/b/c/' and name = 'd');
+    expected_value = '0:array|1|1|0';
+    resulting_value = (select node_index || ':' || value_type from aux_json_parse(:test_json) where node_path = '/-/a/b/c/' and name = 'd')
+                    || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 0)
+                    || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 1)
+                    || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 2);
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;

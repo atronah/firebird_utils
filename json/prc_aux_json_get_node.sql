@@ -49,8 +49,8 @@ begin
                 , node_type, node_value
         do
         begin
-            prefix = decode(node_type, 'string', '"', 'object', '{', 'array', '[', '');
-            suffix = decode(node_type, 'string', '"', 'object', '}', 'array', ']', '');
+            prefix = decode(node_type, 'string', '"', '');
+            suffix = decode(node_type, 'string', '"', '');
             node = prefix || node_value || suffix;
 
             value_type = null; val = null; value_name = null;

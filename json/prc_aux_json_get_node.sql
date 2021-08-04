@@ -32,35 +32,49 @@ declare suffix varchar(255);
 begin
     for select
             node_path, node_start, node_end, level
+            , error_code, error_text
         from aux_json_parse(:json_in)
         where name = :key_param and val = :key_value
         order by level desc
         into key_node_path, key_node_start, key_node_end, key_node_level
+            , error_code, error_text
     do
     begin
-        for select
-                node_path, node_index, level, node_start, node_end, name
-                , value_type, val
-            from aux_json_parse(:json_in)
-            where node_start < :key_node_start
-                    and node_end > :key_node_end
-                    and level = (:key_node_level - 1)
-            into node_path, node_index, node_level, node_start, node_end, node_name
-                , node_type, node_value
-        do
+        if (error_code = 0) then
         begin
-            prefix = decode(node_type, 'string', '"', '');
-            suffix = decode(node_type, 'string', '"', '');
-            node = prefix || node_value || suffix;
+            for select
+                    node_path, node_index, level, node_start, node_end, name
+                    , value_type, val
+                    , error_code, error_text
+                from aux_json_parse(:json_in)
+                where node_start < :key_node_start
+                        and node_end > :key_node_end
+                        and level = (:key_node_level - 1)
+                into node_path, node_index, node_level, node_start, node_end, node_name
+                    , node_type, node_value
+                    , error_code, error_text
+            do
+            begin
+                if (error_code = 0) then
+                begin
+                    prefix = decode(node_type, 'string', '"', '');
+                    suffix = decode(node_type, 'string', '"', '');
+                    node = prefix || node_value || suffix;
 
-            value_type = null; val = null; value_name = null;
-            for select name, value_type, val
-                from aux_json_parse(:node)
-                where name = :value_param
-                into value_name, value_type, val
-            do suspend;
-            if (row_count = 0) then suspend;
+                    value_type = null; val = null; value_name = null;
+                    for select name, value_type, val, error_code, error_text
+                        from aux_json_parse(:node)
+                        where name = :value_param
+                        into value_name, value_type, val, error_code, error_text
+                    do suspend;
+                    if (row_count = 0) then suspend;
+                    error_code = 0; error_text = '';
+                end
+                else suspend;
+            end
+            error_code = 0; error_text = '';
         end
+        else suspend;
     end
 end^
 

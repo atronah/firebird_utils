@@ -90,7 +90,9 @@ begin
     state = NO_STATE;
     json = json_in;
     json_length = char_length(json);
-
+    
+    -- parameters of root/main/top json object in passed json_in,
+    -- this parameters will be returned at the end of parsing after returning all child json objects
     root_node_start = null;
     root_node_end = null;
     root_value_start = null;

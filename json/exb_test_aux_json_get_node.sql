@@ -48,7 +48,7 @@ begin
     suspend;
 
     test_name = 'objects with different type of content: get content';
-    expected_value = '{"ty| 2}}|"param1": 1, "param": 2|object|/-/items/|1';
+    expected_value = '{"ty| 2}}|{"param1": 1, "param": 2}|object|/-/items/|1';
     resulting_value = (select first 1
                                 left(node, 4) || '|' || right(node, 4) || '|' || val|| '|' || value_type
                                 || '|' || node_path || '|' || node_index

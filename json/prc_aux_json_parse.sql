@@ -87,7 +87,7 @@ begin
     state = NO_STATE;
     json = json_in;
     json_length = char_length(json);
-    
+
     -- parameters of root/main/top json object in passed json_in,
     -- this parameters will be returned at the end of parsing after returning all child json objects
     root_node_start = null;
@@ -110,13 +110,9 @@ begin
 
         if (c in (SPACE, HRZ_TAB, NEW_LINE, CARR_RET)) then
         begin
-            if (state in (NO_STATE, AFTER_STRING, IN_OBJECT, IN_ARRAY)) then
+            if (state in (NO_STATE, AFTER_STRING, IN_OBJECT, IN_ARRAY, IN_STRING)) then
             begin
                 -- do nothing, skip
-            end
-            else if (state in (IN_STRING)) then
-            begin
-                root_value_end = pos;
             end
             else if (state = IN_NUMBER) then
             begin
@@ -162,6 +158,7 @@ begin
                 if (error_code = NO_ERROR) then
                 begin
                     root_node_start = pos;
+                    root_value_start = pos;
                     child_node_index = 0;
                     root_value_type = coalesce(root_value_type
                                                 , case
@@ -176,14 +173,12 @@ begin
             begin
                 if (c = '}') then
                 begin
-                    state = FINISH; root_node_end = pos;
+                    state = FINISH; root_node_end = pos; root_value_end = pos;
                 end
                 else if (c = '"') then
                 begin
                     if (is_comma_required > 0) then error_code = COMMA_MISSED_ERROR;
                     if (error_code <> NO_ERROR) then break;
-
-                    root_value_start = coalesce(root_value_start, pos);
 
                     for select
                             node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
@@ -211,14 +206,12 @@ begin
             begin
                 if (c = ']') then
                 begin
-                    state = FINISH; root_node_end = pos;
+                    state = FINISH; root_node_end = pos; root_value_end = pos;
                 end
                 else if (c in ('{', '"', '-', 't', 'f', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')) then
                 begin
                     if (is_comma_required > 0) then error_code = COMMA_MISSED_ERROR;
                     if (error_code <> NO_ERROR) then break;
-
-                    root_value_start = coalesce(root_value_start, pos);
 
                     for select
                             node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
@@ -239,7 +232,6 @@ begin
                 begin
                     is_comma_required = 0;
                     child_node_index = child_node_index + 1;
-                    root_value_end = pos;
                 end
                 else error_code = UNEXPECTED_SYMBOL_IN_ARRAY_ERR;
             end
@@ -249,19 +241,19 @@ begin
                 begin
                     state = AFTER_STRING;
                     root_node_end = pos;
+                    root_value_end = pos;
                 end
                 -- todo: add support escaped symbols including `\"`
                 else
                 begin
                     root_value_start = coalesce(root_value_start, pos);
-                    root_value_end = pos;
                 end
             end
             else if (state = AFTER_STRING) then
             begin
                 if (c = ':') then
                 begin
-                    root_name = substring(json from root_value_start for root_value_end - root_value_start + 1);
+                    root_name = substring(json from root_value_start + 1 for root_value_end - root_value_start - 1);
                     root_value_start = null; root_value_end = null;
                     for select
                             node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
@@ -270,14 +262,14 @@ begin
                     do
                     begin
                         if (error_code <> NO_ERROR) then break;
-                        root_value_start = coalesce(root_value_start, value_start);
-                        root_value_end = coalesce(value_end, node_end);
+                        root_value_start = coalesce(root_value_start, node_start);
                         pos = node_end;
 
+                        -- for `"x": {...} ` is `{...}`
                         if (level = 0) then
                         begin
-                            root_value_start = value_start;
-                            root_value_end = value_end;
+                            root_value_start = node_start;
+                            root_value_end = node_end;
                             root_value_type = value_type;
                         end
                         else suspend;
@@ -344,6 +336,8 @@ begin
         name = nullif(root_name, '');
         node_path = '/';
         val = substring(json from value_start for value_end - value_start + 1);
+        if (value_type = STR)
+            then val = substring(val from 2 for char_length(val) - 2);
         node_index = coalesce(root_node_index, 0);
         suspend;
     end

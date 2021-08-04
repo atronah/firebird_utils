@@ -34,7 +34,6 @@ declare root_value_end bigint;
 declare root_node_path varchar(4096);
 declare root_value_type varchar(8);
 declare root_val blob sub_type text;
-declare root_level bigint;
 declare temp_root_val varchar(16000);
 declare is_sub_root smallint;
 -- Constants
@@ -84,7 +83,6 @@ begin
     error_code = NO_ERROR;
     error_text = null;
 
-    root_level = 0;
     is_comma_required = 0;
 
     state = NO_STATE;
@@ -277,7 +275,7 @@ begin
                         root_value_end = coalesce(value_end, node_end);
                         pos = node_end;
 
-                        if (level = root_level) then
+                        if (level = 0) then
                         begin
                             root_value_start = value_start;
                             root_value_end = value_end;
@@ -343,7 +341,7 @@ begin
         value_start = coalesce(root_value_start, node_start);
         value_end = coalesce(root_value_end, node_end);
         value_type = root_value_type;
-        level = root_level;
+        level = 0;
         name = nullif(root_name, '');
         node_path = '/';
         val = substring(json from value_start for value_end - value_start + 1);

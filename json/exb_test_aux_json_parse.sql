@@ -59,21 +59,15 @@ begin
     -- -- -- --
     test_json = '   {
                         "some param": "text value",
-                        "my array": [
-                            "array item 1",
-                            "array item 2",
-                            "array item 3",
-                        ],
+                        "my array": ["array item 1", "array item 2", "array item 3",],
                         "some object": {
                             "object.text": "child text value",
                             "object.num": -932.45    ,
                             "object.obj": {
-                                "mixed array": [
-                                    "just string",
-                                    140,
-                                    { "object as array item" : "simple" },
-                                    "number as array item": 0.98
-                                ],
+                                "mixed array": ["just string",
+                                                140,
+                                                { "object as array item" : "simple" },
+                                                "number as array item": 0.98],
                             },
                         },
                     }';
@@ -91,25 +85,25 @@ begin
     suspend;
 
     test_name = 'complex: my array';
-    -- value_type|left(val, 4)|right(val,4)|error_code
-    expected_value = '"my |   ]|/-/|1|array|"arr| 3",|0';
     resulting_value = (select first 1
                             substring(:test_json from node_start for 4)
                                 || '|' || substring(:test_json from node_end - 4 + 1 for 4)
-                                || '|' || node_path || '|' || node_index
+                                || '|' || node_path
+                                || '|' || node_index
                                 || '|' || value_type
                                 || '|' || left(val, 4)
                                 || '|' || right(val, 4)
+                                || '|' || substring(:test_json from value_start for 4)
+                                || '|' || substring(:test_json from value_end - 4 + 1 for 4)
                                 || '|' || error_code
                             from aux_json_parse(:test_json)
                         where name = 'my array');
+    expected_value = '"my |3",]|/-/|1|array|["ar|3",]|["ar|3",]|0';
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;
 
-    test_name = 'complex: object as array item';
-    -- left(4)|right(4)|node_path|node_index|value_type|left(val, 4)|right(val,4)|error_code
-    expected_value = 'object|"obj|ple"|0';
+    test_name = '3d item (with index = 2) in mixed array (this item has type "object")';
     resulting_value = (select first 1
                                 value_type
                                 || '|' || left(val, 4)
@@ -117,7 +111,7 @@ begin
                                 || '|' || error_code
                             from aux_json_parse(:test_json)
                         where node_path = '/-/some object/object.obj/mixed array/' and node_index = 2);
-
+    expected_value = 'object|{ "o|e" }|0';
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
     suspend;

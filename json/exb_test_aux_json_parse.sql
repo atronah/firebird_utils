@@ -150,7 +150,7 @@ begin
                 || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.1.2')
                 || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.1.3')
                 || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.1.')
-                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.1/' and value_type = 'object' and val like '"%":%' );
+                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.1/' and value_type = 'object' and val similar to '${"[^"]+":[^}]+$}' escape '$');
     expected_value = '0:-1:number|0:0:number|0:1.0:number|/-/a/b/c/d/-/d.1/-/|3';
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
@@ -161,7 +161,7 @@ begin
                 || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.2.2')
                 || '|' || (select node_index || ':' || val || ':' || value_type  from aux_json_parse(:test_json) where name = 'd.2.3')
                 || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.2.')
-                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/' and value_type = 'object' and val like '"%":%');
+                || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/' and value_type = 'object' and val similar to '${"[^"]+":[^}]+$}' escape '$');
     expected_value = '0:-1.1:number|0:0.3:number|0:1.5:number|/-/a/b/c/d/-/d.2/-/|3';
     test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
     total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;

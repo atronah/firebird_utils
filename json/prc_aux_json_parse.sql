@@ -54,7 +54,6 @@ declare FINISH smallint = 6;
 declare OBJ varchar(8) = 'object';
 declare ARR varchar(8) = 'array';
 declare STR varchar(8) = 'string';
-declare PARAM varchar(8) = 'param';
 declare NUM varchar(8) = 'number';
 declare VALUE_TRUE varchar(8) = 'true';
 declare VALUE_FALSE varchar(8) = 'false';

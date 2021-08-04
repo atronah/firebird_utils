@@ -90,6 +90,8 @@ begin
         ]
     }';
     test_name = 'few nodes with the same type';
+    -- getting only objects with `type = "B"`
+    -- count items|first item|second item
     expected_value = '2|B1 value|B2 value';
     resulting_value = (select count(*) from aux_json_get_node(:test_json, 'type', 'B'))
                 || '|' || coalesce((select val from aux_json_get_node(:test_json, 'type', 'B', 'value') where node_index = 1), 'null')

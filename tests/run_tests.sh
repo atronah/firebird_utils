@@ -13,6 +13,12 @@ exec 8>&1
 
 pushd ${scriptpath}
 
+check_result () {
+    if [[ ! $1 =~ "ALL TESTS PASSED" ]]; then
+        echo "$test_result" >&2
+    fi
+}
+
 rm -f ${db_name}
 echo 'create test database'
 echo "create database '${db_name}' page_size 16384; commit;" | isql -user ${db_user} -pas ${db_password} -q
@@ -23,7 +29,7 @@ echo 'initiating test database'
 echo 'testing procedure aux_strip_text'
 isql -user ${db_user} -pas ${db_password} ${db_name} -i ../prc_aux_strip_text.sql
 test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ./test_aux_strip_text.sql | tee >(cat - >&8))
-if [[ ! $test_result =~ "ALL TESTS PASSED" ]]; then echo "$test_result" >&2; fi
+check_result "$test_result"
 
 rm -f ${db_name}
 

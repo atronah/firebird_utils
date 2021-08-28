@@ -4,21 +4,44 @@ db_user=SYSDBA
 db_password=masterkey
 db_name=test.fdb
 
-scriptpath="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+usage () {
+    echo "usage: test.sh [arguments]"
+    echo ""
+    echo "arguments:"
+    echo "-v                shows each test details"
+    echo "-h                shows this help"
+    echo "-d DATABASE     specify database file or connection string for tests (default 'test.fdb')"
+    echo "-u USERNAME     specify username to connect to test database (default 'SYSDBA')"
+    echo "-p USERNAME     specify username to connect to test database (default 'masterkey')"
+}
 
-pushd ${scriptpath}
+verbose=false
+db="test.fdb"
+db_user="SYSDBA"
+db_password='masterkey'
 
-rm -f ${db_name}
-echo 'create test database'
-echo "create database '${db_name}' page_size 16384; commit;" | isql -user ${db_user} -pas ${db_password}
+# Parse arguments
+while getopts "v,h,:d:,u:,p:" opt; do
+    case $opt in
+        v) verbose=true
+        ;;
+        h) usage && exit 0
+        ;;
+        d) db="$OPTARG"
+        ;;
+        u) db_user="$OPTARG"
+        ;;
+        p) db_password="$OPTARG"
+        ;;
+        *) echo "Invalid option or its argument: $OPTARG" >&2
+            usage && exit 1
+        ;;
+    esac
+done
 
-echo 'init test database'
-# isql -user ${db_user} -pas ${db_password} ${db_name} -i ./tests/init_test_db.sql
-
-echo 'tests procedure aux_strip_text'
-isql -user ${db_user} -pas ${db_password} ${db_name} -i prc_aux_strip_text.sql
-isql -user ${db_user} -pas ${db_password} ${db_name} -i ./tests/test_aux_strip_text.sql
-
-rm -f ${db_name}
-
-popd
+if [ $verbose = true ]; then
+    exec 8>&1
+    test_results=$(./tests/run_tests.sh "$db" "$db_user" "$db_password" | tee >(cat - >&8))
+else
+    test_results=$(./tests/run_tests.sh "$db" "$db_user" "$db_password")
+fi

@@ -1,8 +1,11 @@
 #! /usr/bin/env bash
 
-db_user=SYSDBA
-db_password=masterkey
-db_name=test.fdb
+scriptpath="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+verbose=false
+db="test.fdb"
+db_user="SYSDBA"
+db_password='masterkey'
 
 usage () {
     echo "usage: test.sh [arguments]"
@@ -10,15 +13,11 @@ usage () {
     echo "arguments:"
     echo "-v                shows each test details"
     echo "-h                shows this help"
-    echo "-d DATABASE     specify database file or connection string for tests (default 'test.fdb')"
-    echo "-u USERNAME     specify username to connect to test database (default 'SYSDBA')"
-    echo "-p USERNAME     specify username to connect to test database (default 'masterkey')"
+    echo "-d DATABASE       specify database file or connection string for tests (default '${db}')"
+    echo "-u USERNAME       specify username to connect to test database (default '${db_user}')"
+    echo "-p USERNAME       specify username to connect to test database (default '${db_password}')"
 }
 
-verbose=false
-db="test.fdb"
-db_user="SYSDBA"
-db_password='masterkey'
 
 # Parse arguments
 while getopts "v,h,:d:,u:,p:" opt; do
@@ -41,7 +40,7 @@ done
 
 if [ $verbose = true ]; then
     exec 8>&1
-    test_results=$(./tests/run_tests.sh "$db" "$db_user" "$db_password" | tee >(cat - >&8))
+    test_results=$(${scriptpath}/tests/run_tests.sh "$db" "$db_user" "$db_password" | tee >(cat - >&8))
 else
-    test_results=$(./tests/run_tests.sh "$db" "$db_user" "$db_password")
+    test_results=$(${scriptpath}/tests/run_tests.sh "$db" "$db_user" "$db_password")
 fi

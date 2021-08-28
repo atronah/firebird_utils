@@ -5,12 +5,13 @@ set term ^ ;
 execute block
 returns (
     test_name varchar(255)
-    , test_result smallint
+    , test_result varchar(16)
     , expected_value varchar(4096)
     , resulting_value varchar(4096)
     , summary varchar(32)
 )
 as
+declare is_ok smallint;
 declare test_json blob sub_type text;
 declare total_count bigint;
 declare success_count bigint;
@@ -33,8 +34,8 @@ begin
                                 left(node, 4) || '|' || right(node, 4) || '|' || val || '|' || value_type
                                 || '|' || node_path || '|' || node_index
                             from aux_json_get_node(:test_json, 'type', 'title', 'value'));
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'objects with different type of content: get comment';
@@ -43,8 +44,8 @@ begin
                                 left(node, 4) || '|' || right(node, 4) || '|' || val || '|' || value_type
                                 || '|' || node_path || '|' || node_index
                             from aux_json_get_node(:test_json, 'type', 'comment', 'value'));
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'objects with different type of content: get content';
@@ -53,8 +54,8 @@ begin
                                 left(node, 4) || '|' || right(node, 4) || '|' || val|| '|' || value_type
                                 || '|' || node_path || '|' || node_index
                             from aux_json_get_node(:test_json, 'type', 'content', 'value'));
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -73,8 +74,8 @@ begin
     resulting_value = coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'A', 'value')), 'null')
             || '|' || coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'B', 'value')), 'null')
             || '|' || coalesce((select node_name || ':' || val from aux_json_get_node(:test_json, 'type', 'C', 'value')), 'null');
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -96,12 +97,19 @@ begin
     resulting_value = (select count(*) from aux_json_get_node(:test_json, 'type', 'B'))
                 || '|' || coalesce((select val from aux_json_get_node(:test_json, 'type', 'B', 'value') where node_index = 1), 'null')
                 || '|' || coalesce((select val from aux_json_get_node(:test_json, 'type', 'B', 'value') where node_index = 2), 'null');
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
+    -- -- -- --
+    -- -- -- --
 
-    -- -- -- --
-    -- -- -- --
+    test_name = 'ALL TESTS SUMMARY';
+    test_json = null;
+    expected_value = total_count;
+    resulting_value = success_count;
+    test_result = iif(success_count = total_count, 'PASSED', 'FAILED');
+    summary = iif(success_count = total_count, 'ALL TESTS PASSED', (total_count - success_count) ||  ' of ' || total_count || ' TESTS FAILED');
+    suspend;
 end^
 
 set term ; ^

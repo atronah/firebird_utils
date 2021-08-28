@@ -5,12 +5,13 @@ set term ^ ;
 execute block
 returns (
     test_name varchar(255)
-    , test_result smallint
+    , test_result varchar(16)
     , expected_value varchar(4096)
     , resulting_value varchar(4096)
     , summary varchar(32)
 )
 as
+declare is_ok smallint;
 declare test_json blob sub_type text;
 declare total_count bigint;
 declare success_count bigint;
@@ -33,8 +34,8 @@ begin
                             || '|' || error_code
                             from aux_json_parse(:test_json));
     expected_value = '6|16|/|0|string|null|just text|0';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -45,8 +46,8 @@ begin
     test_name = 'number of all found json pairs "param:value" in json with only one object without trailing "{" and "}"';
     resulting_value = (select count(*) from aux_json_parse(:test_json));
     expected_value = 1; -- expected number 1 because source json contains only one parameter
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'start/end positions of found node, its path, type, index, name and value';
@@ -55,8 +56,8 @@ begin
     resulting_value = (select first 1
                              node_start || '|' || node_end || '|' || node_path || '|' || node_index || '|' || value_type || '|' || name || '|' || val || '|' || error_code
                             from aux_json_parse(:test_json));
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -85,8 +86,8 @@ begin
                                 || '|' || name || '|' || val || '|' || error_code
                             from aux_json_parse(:test_json));
     expected_value = '"som|lue"|/-/|0|string|some param|text value|0';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'complex: my array';
@@ -104,8 +105,8 @@ begin
                             from aux_json_parse(:test_json)
                         where name = 'my array');
     expected_value = '"my |3",]|/-/|1|array|["ar|3",]|["ar|3",]|0';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = '3d item (with index = 2) in mixed array (this item has type "object")';
@@ -117,15 +118,15 @@ begin
                             from aux_json_parse(:test_json)
                         where node_path = '/-/some object/object.obj/mixed array/' and node_index = 2);
     expected_value = 'object|{ "o|e" }|0';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'complex: count';
     resulting_value = (select count(*) from aux_json_parse(:test_json));
     expected_value = 16;
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -152,8 +153,8 @@ begin
                 || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.1.')
                 || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.1/' and value_type = 'object' and val similar to '${"[^"]+":[^}]+$}' escape '$');
     expected_value = '0:-1:number|0:0:number|0:1.0:number|/-/a/b/c/d/-/d.1/-/|3';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'nested obj/arr: d.2.* zero indexes, values and types';
@@ -163,8 +164,8 @@ begin
                 || '|' || (select distinct node_path from aux_json_parse(:test_json) where name starts with 'd.2.')
                 || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/-/d.2/' and value_type = 'object' and val similar to '${"[^"]+":[^}]+$}' escape '$');
     expected_value = '0:-1.1:number|0:0.3:number|0:1.5:number|/-/a/b/c/d/-/d.2/-/|3';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'nested obj/arr: d array';
@@ -173,8 +174,8 @@ begin
                     || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 0)
                     || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 1)
                     || '|' || (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/b/c/d/' and node_index = 2);
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     test_name = 'nested obj/arr: levels';
     resulting_value = (select distinct level from aux_json_parse(:test_json) where node_path = '/') -- 0
@@ -191,8 +192,8 @@ begin
                     || '|' || (select distinct level from aux_json_parse(:test_json) where name starts with 'd.2.')
                     ;
     expected_value = '0|1|2|3|4|5|6|7|7|8|8|8';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
 
     test_name = 'nested obj/arr: count';
@@ -203,8 +204,8 @@ begin
     -- 1 `array` "d.2" + 3 `object` inside `array` "d.2" + 3 `string:num` of each item in `array` "d.2"
     resulting_value = (select count(*) from aux_json_parse(:test_json));
     expected_value = 21;
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -217,8 +218,8 @@ begin
     test_name = 'commas between array items';
     resulting_value = (select count(*) from aux_json_parse(:test_json) where node_path = '/-/a/' and val = 1 and error_code = 7);
     expected_value = '1';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
@@ -231,11 +232,19 @@ begin
     test_name = 'commas between array items';
     resulting_value = (select count(*) from aux_json_parse(:test_json) where error_code = 7);
     expected_value = '1';
-    test_result = iif(resulting_value is not distinct from expected_value, 1, 0);
-    total_count = total_count + 1; success_count = success_count + test_result; summary = success_count || '/' || total_count;
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
     suspend;
     -- -- -- --
     -- -- -- --
+
+    test_name = 'ALL TESTS SUMMARY';
+    test_json = null;
+    expected_value = total_count;
+    resulting_value = success_count;
+    test_result = iif(success_count = total_count, 'PASSED', 'FAILED');
+    summary = iif(success_count = total_count, 'ALL TESTS PASSED', (total_count - success_count) ||  ' of ' || total_count || ' TESTS FAILED');
+    suspend;
 end^
 
 set term ; ^

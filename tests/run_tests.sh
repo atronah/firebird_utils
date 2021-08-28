@@ -31,6 +31,14 @@ isql -user ${db_user} -pas ${db_password} ${db_name} -i ../prc_aux_strip_text.sq
 test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ./test_aux_strip_text.sql | tee >(cat - >&8))
 check_result "$test_result"
 
+echo 'testing procedure aux_json_parse'
+isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/prc_aux_json_parse.sql
+test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/test_aux_json_parse.sql | tee >(cat - >&8))
+
+echo 'testing procedure aux_json_get_node'
+isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/prc_aux_json_get_node.sql
+test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/test_aux_json_get_node.sql | tee >(cat - >&8))
+
 rm -f ${db_name}
 
 popd

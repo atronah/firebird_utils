@@ -9,3 +9,4 @@ create table dbmon_changes_history(
 );
 
 create desc index idx_dbmon_changes_history on dbmon_changes_history (checked);
+create asc index idx_dbmon_changes_history_name on dbmon_changes_history (obj_name);

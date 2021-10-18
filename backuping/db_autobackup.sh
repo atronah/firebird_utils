@@ -179,8 +179,10 @@ else
     fi
 fi
 
-echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
-rm ./*
+if [[ "$(pwd)" == "$work_dir" ]]; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] clean $work_dir"
+    rm ./*
+fi
 
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore working directory"
 popd

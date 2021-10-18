@@ -1,5 +1,7 @@
 #! /bin/sh
 
+# source: https://github.com/atronah/firebird_utils
+
 fb_gbak="/opt/firebird/bin/gbak"
 zipper=7za
 error_pattern="\s\+ERROR:"

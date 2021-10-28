@@ -23,20 +23,20 @@ declare extra_info varchar(255);
 declare is_begin smallint;
 declare repeater smallint;
 -- constants
-declare TYPE_TABLE smallint = 0;
-declare TYPE_VIEW smallint = 1;
-declare TYPE_TRIGGER smallint = 2;
--- declare TYPE_COMPUTED_COLUMN smallint = 3;
--- declare TYPE_CONSTRAINT smallint = 4;
-declare TYPE_PROCEDURE smallint = 5;
+declare TYPE_TABLE type of column rdb$dependencies.rdb$dependent_type = 0;
+declare TYPE_VIEW type of column rdb$dependencies.rdb$dependent_type = 1;
+declare TYPE_TRIGGER type of column rdb$dependencies.rdb$dependent_type = 2;
+-- declare TYPE_COMPUTED_COLUMN type of column rdb$dependencies.rdb$dependent_type = 3;
+-- declare TYPE_CONSTRAINT type of column rdb$dependencies.rdb$dependent_type = 4;
+declare TYPE_PROCEDURE type of column rdb$dependencies.rdb$dependent_type = 5;
 -- declare TYPE_INDEX_EXPRESSION smallint = 6;
-declare TYPE_EXCEPTION smallint = 7;
--- declare TYPE_USER smallint = 8;
-declare TYPE_DOMAIN smallint = 9;
--- declare TYPE_INDEX smallint = 10;
-declare TYPE_SEQUENCE smallint = 14;
--- declare TYPE_UDF smallint = 15;
--- declare TYPE_COLLATION smallint = 17;
+declare TYPE_EXCEPTION type of column rdb$dependencies.rdb$dependent_type = 7;
+-- declare TYPE_USER type of column rdb$dependencies.rdb$dependent_type = 8;
+declare TYPE_DOMAIN type of column rdb$dependencies.rdb$dependent_type = 9;
+-- declare TYPE_INDEX type of column rdb$dependencies.rdb$dependent_type = 10;
+declare TYPE_SEQUENCE type of column rdb$dependencies.rdb$dependent_type = 14;
+-- declare TYPE_UDF type of column rdb$dependencies.rdb$dependent_type = 15;
+-- declare TYPE_COLLATION type of column rdb$dependencies.rdb$dependent_type = 17;
 declare endl varchar(2) = '
 ';
 begin

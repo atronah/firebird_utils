@@ -66,7 +66,9 @@ begin
                     from rdb$generators
                     where rdb$generator_name = :object_name)
                 then TYPE_SEQUENCE
-            else (select coalesce(rdb$relation_type, :TYPE_TABLE)
+            else (select decode(rdb$relation_type
+                                , 1, :TYPE_VIEW
+                                , :TYPE_TABLE)
                     from rdb$relations
                     where rdb$relation_name = :object_name
                         and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TYPE_TABLE, :TYPE_VIEW))

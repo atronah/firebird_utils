@@ -8,9 +8,9 @@ returns(
 begin
 	for select
             trim(r.rdb$relation_name)
-        from rdb$relations r
+        from rdb$relations as r
         where coalesce(r.rdb$system_flag, 0) = 0
-            and r.rdb$view_blr is null
+            and coalesce(rdb$relation_type, 0) = 0
         order by 1
     into :tname do
 	begin

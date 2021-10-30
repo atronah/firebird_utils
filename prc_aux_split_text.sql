@@ -1,13 +1,13 @@
 set term ^ ;
 
 create or alter procedure aux_split_text(
-    text varchar(4096)
+    text varchar(16384)
     , delimiter varchar(32) = ','
     , trim_part smallint = 1
 )
 returns(
     idx smallint
-    , part varchar(4096)
+    , part varchar(16384)
 )
 as
 declare pos bigint;

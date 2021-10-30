@@ -208,27 +208,37 @@ begin
         select
                 ' for '  || rdb$relation_name || :endl
                 || trim(iif(coalesce(rdb$trigger_inactive, 0) > 1, 'inactive', 'active'))
-                || ' ' || trim(case rdb$trigger_type
-                                    when 1 then 'before insert'
-                                    when 2 then 'after insert'
-                                    when 3 then 'before update'
-                                    when 4 then 'after update'
-                                    when 5 then 'before delete'
-                                    when 6 then 'after delete'
-                                    when 17 then 'before insert or update'
-                                    when 18 then 'after insert or update'
-                                    when 25 then 'before insert or delete'
-                                    when 26 then 'after insert or delete'
-                                    when 27 then 'before update or delete'
-                                    when 28 then 'after update or delete'
-                                    when 113 then 'before insert or update or delete'
-                                    when 114 then 'after insert or update or delete'
-                                    when 8192 then 'on connect'
-                                    when 8193 then 'on disconnect'
-                                    when 8194 then 'on transaction start'
-                                    when 8195 then 'on transaction commit'
-                                    when 8196 then 'on transaction rollback'
-                                end)
+                -- from https://github.com/FirebirdSQL/firebird/blob/799bca3ca5f9eb604433addc0f2b7cb3b6c07275/doc/sql.extensions/README.universal_triggers
+                -- // that's how trigger action types are encoded
+                /*
+                bit 0 = TRIGGER_BEFORE/TRIGGER_AFTER flag,
+                bits 1-2 = TRIGGER_INSERT/TRIGGER_UPDATE/TRIGGER_DELETE (slot #1),
+                bits 3-4 = TRIGGER_INSERT/TRIGGER_UPDATE/TRIGGER_DELETE (slot #2),
+                bits 5-6 = TRIGGER_INSERT/TRIGGER_UPDATE/TRIGGER_DELETE (slot #3),
+                and finally the above calculated value is decremented
+
+                example #1:
+                    TRIGGER_AFTER_DELETE =
+                    = ((TRIGGER_DELETE << 1) | TRIGGER_AFTER) - 1 =
+                    = ((3 << 1) | 1) - 1 =
+                    = 0x00000110 (6)
+
+                example #2:
+                    TRIGGER_BEFORE_INSERT_UPDATE =
+                    = ((TRIGGER_UPDATE << 3) | (TRIGGER_INSERT << 1) | TRIGGER_BEFORE) - 1 =
+                    = ((2 << 3) | (1 << 1) | 0) - 1 =
+                    = 0x00010001 (17)
+
+                example #3:
+                    TRIGGER_AFTER_UPDATE_DELETE_INSERT =
+                    = ((TRIGGER_INSERT << 5) | (TRIGGER_DELETE << 3) | (TRIGGER_UPDATE << 1) | TRIGGER_AFTER) - 1 =
+                    = ((1 << 5) | (3 << 3) | (2 << 1) | 1) - 1 =
+                    = 0x00111100 (60)
+                */
+                || ' ' || trim(decode(bin_and(rdb$trigger_type + 1, 1), 0, 'before', 'after')
+                                || ' ' || decode(bin_and(bin_shr(rdb$trigger_type + 1, 1), 3), 1, 'insert', 2, 'update', 3, 'delete')
+                                || coalesce(' or ' || decode(bin_and(bin_shr(rdb$trigger_type + 1, 3), 3), 1, 'insert', 2, 'update', 3, 'delete'), '')
+                                || coalesce(' or ' || decode(bin_and(bin_shr(rdb$trigger_type + 1, 5), 3), 1, 'insert', 2, 'update', 3, 'delete'), ''))
                 || ' position ' || rdb$trigger_sequence
             from rdb$triggers
             where rdb$trigger_name = :object_name

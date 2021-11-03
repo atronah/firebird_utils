@@ -1,7 +1,7 @@
 set term ^ ;
 
 create or alter procedure aux_get_procedures_order(
-    procedures_list varchar(16384)
+    procedures_list varchar(32000)
     , sub_call smallint = null
 )
 returns(
@@ -15,8 +15,8 @@ as
 declare depth smallint;
 declare new_required_procedures varchar(32000);
 declare new_required_procedures_count bigint;
-declare processed_procedures varchar(16384);
-declare deferred_procedures_list varchar(16384);
+declare processed_procedures varchar(32000);
+declare deferred_procedures_list varchar(32000);
 declare max_depth smallint = 100;
 declare TYPE_PROCEDURE type of column rdb$dependencies.rdb$dependent_type = 5;
 declare NO_LOOP smallint = 0;

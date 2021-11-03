@@ -1,7 +1,7 @@
 set term ^ ;
 
 create or alter procedure aux_get_dependencies(
-    objects_to_process varchar(16384)
+    objects_to_process varchar(32000)
     , objects_to_exclude_regex varchar(32000) = null
     , types_to_exclude varchar(255) = null
     , max_depth smallint = null

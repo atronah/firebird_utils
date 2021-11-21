@@ -10,8 +10,10 @@ create or alter procedure mds_meta_add_field(
 )
 as
 begin
-    table_name = trim(table_name);
-    field_name = trim(field_name);
+    table_name = trim(replace(table_name, '''', ''));
+    field_name = trim(replace(field_name, '''', ''));
+    field_type = trim(replace(field_type, '''', ''));
+    field_comment = replace(field_comment, '''', '''''');
 
     if (not exists(select rdb$field_name
                     from rdb$relation_fields

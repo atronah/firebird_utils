@@ -8,7 +8,8 @@ declare drop_names blob sub_type text;
 declare pos bigint;
 begin
     name = upper(name);
-    
+    name = replace(name, '''', ''); -- to prevent sql injections by passing apostrophe
+
     drop_names = name;
     while (drop_names <> '') do
     begin
@@ -16,10 +17,10 @@ begin
         if (pos = 0) then pos = char_length(drop_names) + 1;
         name = left(drop_names, pos - 1);
         for select distinct trim(rdb$dependent_name)
-            from rdb$dependencies 
+            from rdb$dependencies
             where rdb$depended_on_name = :name and rdb$dependent_name <> :name
             into dependent_name
-            do drop_names = dependent_name 
+            do drop_names = dependent_name
                     || ',' || replace(drop_names, ',' || dependent_name || ',', ',');
 
         if (row_count = 0) then

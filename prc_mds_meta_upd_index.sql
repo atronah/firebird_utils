@@ -42,8 +42,8 @@ begin
                                 , 1, ' desc'
                                 , '')
                         , '')
-                || ' index ' || :index_name
-                || ' on ' || :index_table;
+                || ' index ' || replace(index_name, '''', '')
+                || ' on ' || replace(index_table, '''', '');
 
 
         if (isComputed = 1) then stmt = stmt || ' computed by ';

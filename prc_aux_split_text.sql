@@ -6,7 +6,7 @@ create or alter procedure aux_split_text(
     , trim_part smallint = 1
 )
 returns(
-    idx smallint
+    idx bigint
     , part varchar(32000)
 )
 as

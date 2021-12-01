@@ -6,13 +6,13 @@ create or alter procedure aux_split_text_blob(
     , trim_part smallint = 1
 )
 returns(
-    idx smallint
+    idx bigint
     , part blob sub_type text
 )
 as
 declare pos bigint;
 declare text_len bigint;
-declare delimiter_len smallint;
+declare delimiter_len bigint;
 declare part_begin bigint;
 begin
     if (coalesce(text, '') = '') then exit;

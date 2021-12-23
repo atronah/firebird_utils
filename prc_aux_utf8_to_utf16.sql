@@ -1,3 +1,5 @@
+set term ^ ;
+
 create or alter procedure aux_utf8_to_utf16(
     utf8_data blob sub_type text
 )
@@ -6,33 +8,26 @@ returns(
     , error_text varchar(1024)
     , utf16_data blob sub_type text
     , utf8_data_len bigint
-    , utf8_block_char varchar(1)
-    , utf8_block_char_int bigint
-    , utf8_block_data_int bigint
-    , unicode_code bigint -- code of character in Unicode table
-    -- debug -- , utf8_block_data_bin varchar(64)
-    -- debug -- , data_mask_bin varchar(64)
-    -- debug -- , unicode_code_bin varchar(64)
-    -- debug -- , utf16_data_bin varchar(4096)
 )
 as
 declare pos bigint;
+declare utf8_block_char varchar(1);
+declare utf8_block_char_int bigint;
+declare utf8_block_data_int bigint;
+declare unicode_code bigint;
 declare extra_block_count smallint;
-declare block_num smallint;
-declare data_int smallint;
 declare data_mask bigint;
-declare utf16_character varchar(4);
 declare data_buffer varchar(32000);
 declare data_buffer_len bigint;
 -- Constants
 declare BUFFER_LIMIT bigint = 16000;
--- block prefixes
+-- -- block prefixes
 declare CODING_BY_8BIT smallint = 0; -- 0xxxxxxx
 declare CODING_BY_16BIT smallint = 192; -- 110xxxxx
 declare CODING_BY_24BIT smallint = 224; -- 1110xxxx
 declare CODING_BY_32BIT smallint = 240; -- 11110xxx
 declare EXTRA_BLOCK smallint = 128; -- 10xx xxxx
--- bit masks
+-- -- bit masks
 declare FIRST_BIT_MASK smallint = 128; -- 1000 0000 (to check x... .... for 8 bit coding)
 declare FIRST_TWO_BITS_MASK smallint = 192; -- 1100 0000 (to check xx.. .... for extra block)
 declare FIRST_THREE_BITS_MASK smallint = 224; -- 1110 0000 (to check xxx. .... for 16 bit coding)
@@ -65,7 +60,6 @@ begin
 
             if (extra_block_count = 0) then
             begin
-                block_num = 1;
                 data_mask = 0;
                 unicode_code = 0; -- reset code of character
 
@@ -123,8 +117,6 @@ begin
             -- get significant bits from utf8 block
             utf8_block_data_int = bin_and(utf8_block_char_int, data_mask);
 
-            -- debug -- data_mask_bin = (select bin_data from aux_int_to_bin(:data_mask));
-
             -- shift unicode code to left (<<) for N times, where N is a number of significant bits in utf8 block
             while(data_mask > 0) do
             begin
@@ -149,8 +141,6 @@ begin
                 data_buffer = data_buffer || ascii_char(bin_and(bin_shr(unicode_code, 8), 255)); -- xxxx xxxx .... ....
                 data_buffer_len = data_buffer_len + 1;
 
-                -- debug -- utf16_data_bin = left(coalesce(utf16_data_bin, '') || ' '|| (select bin_data from aux_int_to_bin(bin_and(:unicode_code, 255), 8)), 4096);
-                -- debug -- utf16_data_bin = left(coalesce(utf16_data_bin, '') || ' '|| (select bin_data from aux_int_to_bin(bin_and(bin_shr(:unicode_code, 8), 255), 8)), 4096);
             end
 
             if (data_buffer_len > BUFFER_LIMIT) then
@@ -159,9 +149,7 @@ begin
                 data_buffer = '';
                 data_buffer_len = 0;
             end
-            -- debug -- utf8_block_data_bin = (select bin_data from aux_int_to_bin(:utf8_block_data_int));
-            -- debug -- unicode_code_bin = (select bin_data from aux_int_to_bin(:unicode_code));
-            -- debug -- suspend;
+
             pos = pos + 1;
         end
     end
@@ -169,4 +157,13 @@ begin
     utf16_data = utf16_data || data_buffer;
 
     suspend;
-end
+end^
+
+set term ; ^
+
+comment on procedure aux_utf8_to_utf16 is 'Encode input utf8 data into output utf16 data (supports only 2 byte encoding of utf16)';
+comment on parameter aux_utf8_to_utf16.utf8_data is 'Input data in UTF-8 encoding';
+comment on parameter aux_utf8_to_utf16.error_code is 'Code of an error. If zero - encoding was successful. If more than zero - errors occured suring conversion';
+comment on parameter aux_utf8_to_utf16.error_text is 'Description of an error';
+comment on parameter aux_utf8_to_utf16.utf16_data is 'Encoded in UTF-16 input text';
+comment on parameter aux_utf8_to_utf16.utf8_data_len is 'Number of characters in input utf8 text';

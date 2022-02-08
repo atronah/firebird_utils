@@ -4,7 +4,7 @@ create or alter procedure aux_get_create_statement(
     object_name_in varchar(31)
     , object_type_in smallint = null -- has the same values as RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE
     , only_fields varchar(8192) = null -- if is null - add all fields, otherwise add only specified fields
-    , create_dummy smallint = 0
+    , create_dummy smallint = 0 -- 0 - to create db-object "as is"; 1 - to create dummy version (for table: all fields as varchar; for procedures: without in/out params and body; for triggers: without body); 2 - the same as 1, but to create procedures with all in/out params
     , add_commit smallint = 0 -- 0 - do not add `commit`; 1 - add `commit` after statement;
     , alter_mode smallint = 0 -- add (`=0`) or not (otherwise) modificator `or alter`  for creating statement of procedures and triggers
 )
@@ -295,9 +295,9 @@ begin
                 from rdb$procedure_parameters as p
                     left join rdb$fields as finfo on finfo.rdb$field_name = p.rdb$field_source
                 where p.rdb$procedure_name = :object_name
-                                        and (:create_dummy = 0
+                                        and (:create_dummy in (0, 2)
                                             -- for skipped only dummy params with dependencies
-                                            or (:create_dummy > 0 and (',' || :only_fields || ',') like ('%,' || trim(p.rdb$parameter_name) || ',%')))
+                                            or (:create_dummy = 1 and (',' || :only_fields || ',') like ('%,' || trim(p.rdb$parameter_name) || ',%')))
                                         and rdb$parameter_type = :repeater -- 0 - input param, 1 - output param
                                     order by p.rdb$parameter_number
                 into field_name, field_type, field_params

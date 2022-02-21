@@ -24,7 +24,10 @@ begin
         indent = '';
     end
 
-    if (value_type in ('node', 'list')) then
+    if (value_type = 'node')
+        then value_type = 'obj';
+
+    if (value_type in ('obj', 'list')) then
     begin
         if (human_readable = 1)
             then select list(:indent || part, :endl)
@@ -42,7 +45,7 @@ begin
                     , ''
                     , '"' || name || '": ')
             || case value_type
-                    when 'node'
+                    when 'obj'
                         then iif(trim(val) starts with '{'
                                 , val
                                 , '{' || endl || val || endl || '}')

@@ -13,6 +13,9 @@ returns (
 )
 
 as
+declare pos bigint;
+declare format_str varchar(32);
+declare val_datetime timestamp;
 declare indent varchar(4) = '    ';
 declare endl varchar(2) = '
 ';
@@ -25,54 +28,80 @@ begin
         indent = '';
     end
 
+    value_type = lower(value_type);
+
+    pos = position(':' in value_type);
+    if (pos > 0) then
+    begin
+        format_str = substring(value_type from pos + 1);
+        value_type = substring(value_type from 1 for pos - 1);
+    end
+
     if (value_type = 'node')
         then value_type = 'obj';
 
     if (value_type in ('obj', 'list')) then
     begin
         if (human_readable = 1)
-            then select list(:indent || part, :endl)
+            then select list(:indent || :indent || part, :endl)
                     from aux_split_text(:val, :endl, 0)
                     where part <> ''
                     into val;
-        val = trim(trailing ',' from val);
+
+        val = trim(trim(trailing ',' from val));
+
+        val = case value_type
+                    when 'obj' then iif(val similar to '[[:WHITESPACE:]]*&{%' escape '&'
+                                        , val
+                                        , '{' || endl || indent || val || endl || '}')
+                    when 'list' then iif(val similar to '[[:WHITESPACE:]]*&[%' escape '&'
+                                        , val
+                                        , '[' || endl || val || endl || ']')
+                end;
     end
+    else if (value_type = 'bool') then
+    begin
+        val = trim(iif(upper(trim(val)) in ('', '0', 'FALSE', 'F'), 'false', 'true'));
+    end
+    else if (value_type in ('date', 'datetime')) then
+    begin
+        val_datetime = cast(val as timestamp);
+        val = '"' || extract(year from val_datetime)
+                    || '-' || lpad(extract(month from val_datetime), 2, '0')
+                    || '-' || lpad(extract(day from val_datetime), 2, '0')
+                    || iif(value_type = 'datetime'
+                            , iif(format_str = '1', ' ', 'T')
+                                || lpad(extract(hour from val_datetime), 2, '0')
+                                || ':' || lpad(extract(minute from val_datetime), 2, '0')
+                                || ':' || lpad(trunc(extract(second from val_datetime)), 2, '0')
+                            , '')
+                || '"';
+    end
+    else if (value_type = 'time') then
+    begin
+        val = '"' || case
+                        when val similar to '[0-9]{4}$-[0-9]{2}$-[0-9]{2}[ T]?[0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?' escape '$'
+                            then left(cast(cast(val as timestamp) as time), 8)
+                        when val similar to '[0-9]{1,2}:[0-9]{1,2}(:[0-9]{1,2})?(.[0-9]+)?'
+                            then left(cast(val as time), 8)
+                        else null
+                    end
+            || '"';
+    end
+    else if (value_type = 'num') then
+    begin
+        val = iif(val similar to '&-?([1-9][0-9]*|0)(.[0-9]*)?((e|E)(&+|&-)?[0-9]*)?' escape '&'
+                    , val
+                    , null);
+    end
+    else val = '"' || replace(val, '"', '\"') || '"';
 
     if (val is not null or required > 0) then
     begin
-        val = coalesce(val, '');
-
         node = iif(coalesce(name, '') = ''
                     , ''
                     , '"' || name || '": ')
-            || case value_type
-                    when 'obj'
-                        then iif(trim(val) starts with '{'
-                                , val
-                                , '{' || endl || val || endl || '}')
-                    when 'list'
-                        then '[' || endl || val || endl || ']'
-                    when 'bool'
-                        then '"' || trim(iif(upper(trim(val)) in ('', '0', 'FALSE', 'F'), 'false', 'true')) || '"'
-                    when 'date'
-                        then '"' || (select string from mds_aux_format_date(cast(left(:val, 10) as date), 'yyyy-MM-dd')) || '"'
-                    when 'datetime'
-                        then '"' || (select string
-                                        from mds_aux_format_date(iif(:val similar to '[0-9]{4}$-[0-9]{2}$-[0-9]{2}' escape '$'
-                                                                    , cast(cast(:val as date) as timestamp)
-                                                                    , cast(:val as timestamp))
-                                                                , 'yyyy-MM-ddThh:mm:ss'))
-                                || '"'
-                    when 'time'
-                        then '"' || (select string
-                                        from mds_aux_format_date(iif(:val similar to '[0-9]{1,2}:[0-9]{1,2}(:[0-9]{1,2})?(.[0-9]+)?'
-                                                                    , '1970-01-01 ' || :val
-                                                                    , :val)
-                                                                , 'hh:mm:ss'))
-                                || '"'
-                    when 'str' then '"' || replace(val, '"', '\"') || '"'
-                    else val
-                end
+            || coalesce(val, 'null')
             || iif(add_delimiter > 0, ',' || endl, '');
     end
 

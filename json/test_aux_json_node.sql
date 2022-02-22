@@ -16,6 +16,12 @@ declare val_type varchar(16);
 declare is_ok smallint;
 declare total_count bigint;
 declare success_count bigint;
+declare val_req smallint;
+-- constants
+-- -- aux_json_node.required input parameter
+declare OPTIONAL bigint = 0; -- 0 - no node (empty string) for null values;
+declare REQUIRED_AS_NULL bigint = 1; -- 1 - empty node with `null` as value;
+declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
 begin
     total_count = 0;
     success_count = 0;
@@ -103,6 +109,29 @@ begin
     do
     begin
         resulting_value = (select node from aux_json_node('dt', :val, :val_type, 1));
+        is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+        total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
+        suspend;
+    end
+    -- -- -- --
+    -- -- -- --
+
+    -- -- -- --
+    -- -- -- --
+    for select 'null: list as nothing' as n, 0 as r, 'list' as t, '' as expected_value from rdb$database union all
+        select 'null: list as null' as n, 1 as r, 'list' as t, '"null": null' as expected_value from rdb$database union all
+        select 'null: list as empty' as n, 2 as r, 'list' as t, '"null": []' as expected_value from rdb$database union all
+        select 'null: obj as nothing' as n, 0 as r, 'obj' as t, '' as expected_value from rdb$database union all
+        select 'null: obj as null' as n, 1 as r, 'obj' as t, '"null": null' as expected_value from rdb$database union all
+        select 'null: obj as empty' as n, 2 as r,'obj' as t, '"null": {}' as expected_value from rdb$database union all
+        select 'null: str as nothing' as n, 0 as r, 'str' as t, '' as expected_value from rdb$database union all
+        select 'null: str as null' as n, 1 as r, 'str' as t, '"null": null' as expected_value from rdb$database union all
+        select 'null: str as empty' as n, 2 as r, 'str' as t, '"null": ""' as expected_value from rdb$database
+        into test_name, val_req, val_type, expected_value
+    do
+    begin
+        val = null;
+        resulting_value = (select node from aux_json_node('null', :val, :val_type, :val_req));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;

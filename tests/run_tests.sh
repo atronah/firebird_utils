@@ -39,6 +39,11 @@ echo 'testing procedure aux_json_get_node'
 isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/prc_aux_json_get_node.sql
 test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/test_aux_json_get_node.sql | tee >(cat - >&8))
 
+echo 'testing procedure mds_json_node'
+isql -user ${db_user} -pas ${db_password} ${db_name} -i ../prc_aux_split_text.sql
+isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/prc_aux_json_node.sql
+test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/test_aux_json_node.sql | tee >(cat - >&8))
+
 rm -f ${db_name}
 
 popd

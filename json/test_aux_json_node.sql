@@ -145,6 +145,21 @@ begin
     -- -- -- --
     -- -- -- --
 
+    -- -- -- --
+    -- -- -- --
+    test_name = 'root unnamed node';
+    expected_value = '{"a":"b","c":"d"}';
+    resulting_value = (select node from aux_json_node(null
+                                                        , (select node from aux_json_node('a', 'b', 'str', :OPTIONAL, :NO_FORMATTING, :ADD_DELIMITER))
+                                                        ||(select node from aux_json_node('c', 'd', 'str'))
+                                                        , 'obj', :REQUIRED_AS_NULL));
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
+
+
     test_name = 'ALL TESTS SUMMARY';
     expected_value = total_count;
     resulting_value = success_count;

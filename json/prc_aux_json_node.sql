@@ -3,10 +3,10 @@ set term ^ ;
 create or alter procedure aux_json_node(
     name varchar(255) -- name of node
     , val blob sub_type text -- value of node
-    , value_type varchar(16) = 'str' -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
-    , required smallint = 0 -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
-    , human_readable smallint = 0 -- if distinct from zero indents will be put in resulted node
-    , add_delimiter smallint = 0 -- if distinct from zero comma will be put after node
+    , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
+    , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
+    , human_readable smallint = null -- if distinct from zero indents will be put in resulted node
+    , add_delimiter smallint = null -- if distinct from zero comma will be put after node
 )
 returns (
     node blob sub_type text
@@ -27,6 +27,11 @@ declare endl varchar(2) = '
 ';
 begin
     node = '';
+
+    value_type = coalesce(value_type, 'str');
+    required = coalesce(required, OPTIONAL);
+    human_readable = coalesce(human_readable, 0);
+    add_delimiter = coalesce(add_delimiter, 0);
 
     if (human_readable = 0) then
     begin

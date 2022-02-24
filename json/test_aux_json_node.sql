@@ -44,7 +44,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('number', :val, 'num', :REQUIRED_AS_NULL));
+        resulting_value = (select node from aux_json_node('number', :val, 'num', :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -63,7 +63,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('boolean', :val, 'bool', :REQUIRED_AS_NULL));
+        resulting_value = (select node from aux_json_node('boolean', :val, 'bool', :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -73,13 +73,13 @@ begin
 
     -- -- -- --
     -- -- -- --
-    for select 'list: with brackets' as n, '[1, 2, 3, 4]' as val, '"list": [1, 2, 3, 4]' as expected_value from rdb$database union all
-        select 'list: with no brackets' as n, '1, 2, 3, 4' as val, '"list": [1, 2, 3, 4]' as expected_value from rdb$database union all
-        select 'list: with braces ' as n, '{"a": 1}' as val, '"list": [{"a": 1}]' as expected_value from rdb$database
+    for select 'list: with brackets' as n, '[1, 2, 3, 4]' as val, '"list":[1, 2, 3, 4]' as expected_value from rdb$database union all
+        select 'list: with no brackets' as n, '1, 2, 3, 4' as val, '"list":[1, 2, 3, 4]' as expected_value from rdb$database union all
+        select 'list: with braces ' as n, '{"a": 1}' as val, '"list":[{"a": 1}]' as expected_value from rdb$database
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('list', :val, 'list', :REQUIRED_AS_NULL));
+        resulting_value = (select node from aux_json_node('list', :val, 'list', :REQUIRED_AS_NULL, :NO_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -89,12 +89,12 @@ begin
 
     -- -- -- --
     -- -- -- --
-    for select 'obj: with braces' as n, '{"x": "z", "y": 0}' as val, '"object": {"x": "z", "y": 0}' as expected_value from rdb$database union all
-        select 'obj: with no braces' as n, '"x": "z", "y": 0' as val, '"object": {"x": "z", "y": 0}' as expected_value from rdb$database
+    for select 'obj: with braces' as n, '{"x": "z", "y": 0}' as val, '"object":{"x": "z", "y": 0}' as expected_value from rdb$database union all
+        select 'obj: with no braces' as n, '"x": "z", "y": 0' as val, '"object":{"x": "z", "y": 0}' as expected_value from rdb$database
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('object', :val, 'obj', :REQUIRED_AS_NULL));
+        resulting_value = (select node from aux_json_node('object', :val, 'obj', :REQUIRED_AS_NULL, :NO_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -114,7 +114,7 @@ begin
         into test_name, val_type, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL));
+        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -137,7 +137,7 @@ begin
     do
     begin
         val = null;
-        resulting_value = (select node from aux_json_node('null', :val, :val_type, :val_req));
+        resulting_value = (select node from aux_json_node('null', :val, :val_type, :val_req, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;

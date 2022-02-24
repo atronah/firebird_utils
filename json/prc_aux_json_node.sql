@@ -23,6 +23,7 @@ declare OPTIONAL bigint = 0; -- 0 - no node (empty string) for null values;
 declare REQUIRED_AS_NULL bigint = 1; -- 1 - empty node with `null` as value;
 declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
 -- -- other
+declare SPACE_DUMMY varchar(32) = '<<FBUTILS_JSON_SPACE>>'; -- to substitute it to space after formating and trimming
 declare endl varchar(2) = '
 ';
 begin
@@ -121,10 +122,12 @@ begin
     begin
         node = iif(coalesce(name, '') = ''
                     , ''
-                    , '"' || name || '": ')
+                    , '"' || name || '":' || trim(iif(human_readable > 0, SPACE_DUMMY, '')))
             || coalesce(val, 'null')
-            || iif(add_delimiter > 0, ',' || endl, '');
+            || iif(add_delimiter > 0, ',' || trim(iif(human_readable > 0, SPACE_DUMMY, '')) || endl, '');
     end
+
+    node = replace(node, SPACE_DUMMY, ' ');
 
     suspend;
 end^

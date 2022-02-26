@@ -5,8 +5,8 @@ create or alter procedure aux_json_node(
     , val blob sub_type text -- value of node
     , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
     , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
-    , human_readable smallint = null -- if distinct from zero indents will be put in resulted node
     , add_delimiter smallint = null -- if distinct from zero comma will be put after node
+    , human_readable smallint = null -- if distinct from zero indents will be put in resulted node
 )
 returns (
     node blob sub_type text

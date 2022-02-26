@@ -44,7 +44,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('number', :val, 'num', :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
+        resulting_value = (select node from aux_json_node('number', :val, 'num', :REQUIRED_AS_NULL, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -63,7 +63,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('boolean', :val, 'bool', :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
+        resulting_value = (select node from aux_json_node('boolean', :val, 'bool', :REQUIRED_AS_NULL, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -79,7 +79,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('list', :val, 'list', :REQUIRED_AS_NULL, :NO_FORMATTING));
+        resulting_value = (select node from aux_json_node('list', :val, 'list', :REQUIRED_AS_NULL, :NO_DELIMITER, :NO_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -94,7 +94,7 @@ begin
         into test_name, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('object', :val, 'obj', :REQUIRED_AS_NULL, :NO_FORMATTING));
+        resulting_value = (select node from aux_json_node('object', :val, 'obj', :REQUIRED_AS_NULL, :NO_DELIMITER, :NO_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -114,7 +114,7 @@ begin
         into test_name, val_type, val, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL, :HUMAN_READABLE_FORMATTING));
+        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -137,7 +137,7 @@ begin
     do
     begin
         val = null;
-        resulting_value = (select node from aux_json_node('null', :val, :val_type, :val_req, :HUMAN_READABLE_FORMATTING));
+        resulting_value = (select node from aux_json_node('null', :val, :val_type, :val_req, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;
@@ -150,7 +150,7 @@ begin
     test_name = 'root unnamed node';
     expected_value = '{"a":"b","c":"d"}';
     resulting_value = (select node from aux_json_node(null
-                                                        , (select node from aux_json_node('a', 'b', 'str', :OPTIONAL, :NO_FORMATTING, :ADD_DELIMITER))
+                                                        , (select node from aux_json_node('a', 'b', 'str', :OPTIONAL, :ADD_DELIMITER, :NO_FORMATTING))
                                                         ||(select node from aux_json_node('c', 'd', 'str'))
                                                         , 'obj', :REQUIRED_AS_NULL));
     is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');

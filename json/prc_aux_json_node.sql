@@ -6,7 +6,7 @@ create or alter procedure aux_json_node(
     , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
     , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
     , add_delimiter smallint = null -- if distinct from zero comma will be put after node
-    , human_readable smallint = null -- if distinct from zero indents will be put in resulted node
+    , formatting smallint = null -- if distinct from zero indents will be put in resulted node
 )
 returns (
     node blob sub_type text
@@ -22,6 +22,12 @@ declare indent varchar(4) = '    ';
 declare OPTIONAL bigint = 0; -- 0 - no node (empty string) for null values;
 declare REQUIRED_AS_NULL bigint = 1; -- 1 - empty node with `null` as value;
 declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
+-- -- aux_json_node.human_readable input parameter
+declare NO_FORMATTING smallint = 0;
+declare HUMAN_READABLE_FORMATTING smallint = 1;
+-- -- aux_json_node.add_delimiter input parameter
+declare NO_DELIMITER smallint = 0; -- 0 - without comma after json node
+declare WITH_DELIMITER smallint = 1; -- 0 - witht comma after json node
 -- -- other
 declare SPACE_DUMMY varchar(32) = '<<FBUTILS_JSON_SPACE>>'; -- to substitute it to space after formating and trimming
 declare endl varchar(2) = '
@@ -31,10 +37,10 @@ begin
 
     value_type = coalesce(value_type, 'str');
     required = coalesce(required, OPTIONAL);
-    human_readable = coalesce(human_readable, 0);
-    add_delimiter = coalesce(add_delimiter, 0);
+    formatting = coalesce(formatting, NO_FORMATTING);
+    add_delimiter = coalesce(add_delimiter, NO_DELIMITER);
 
-    if (human_readable = 0) then
+    if (formatting = NO_FORMATTING) then
     begin
         endl = '';
         indent = '';
@@ -64,7 +70,7 @@ begin
 
     if (value_type in ('obj', 'list')) then
     begin
-        if (human_readable = 1 and val containing endl)
+        if (formatting = HUMAN_READABLE_FORMATTING and val containing endl)
             then select list(:indent || :indent || part, :endl)
                     from aux_split_text(:val, :endl, 0)
                     where part <> ''
@@ -122,9 +128,9 @@ begin
     begin
         node = iif(coalesce(name, '') = ''
                     , ''
-                    , '"' || name || '":' || trim(iif(human_readable > 0, SPACE_DUMMY, '')))
+                    , '"' || name || '":' || trim(iif(formatting > NO_FORMATTING, SPACE_DUMMY, '')))
             || coalesce(val, 'null')
-            || iif(add_delimiter > 0, ',' || trim(iif(human_readable > 0, SPACE_DUMMY, '')) || endl, '');
+            || iif(add_delimiter > 0, ',' || trim(iif(formatting > NO_FORMATTING, SPACE_DUMMY, '')) || endl, '');
     end
 
     node = replace(node, SPACE_DUMMY, ' ');
@@ -143,6 +149,6 @@ comment on parameter aux_json_node.required is 'requirement of node:
 - 0 - no node (empty string) for null values;
 - 1 - empty node with `null` as value;
 - 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);';
-comment on parameter aux_json_node.human_readable is 'if distinct from zero indents will be put in resulted node';
+comment on parameter aux_json_node.formatting is 'if distinct from zero indents will be put in resulted node';
 comment on parameter aux_json_node.add_delimiter is 'if distinct from zero comma will be put after node';
 

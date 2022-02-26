@@ -27,7 +27,7 @@ declare REQUIRED_AS_NULL bigint = 1; -- 1 - empty node with `null` as value;
 declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
 -- -- aux_json_node.add_delimiter input parameter
 declare NO_DELIMITER smallint = 0; -- 0 - without comma after json node
-declare ADD_DELIMITER smallint = 1; -- 0 - witht comma after json node
+declare WITH_DELIMITER smallint = 1; -- 0 - witht comma after json node
 begin
     total_count = 0;
     success_count = 0;
@@ -150,7 +150,7 @@ begin
     test_name = 'root unnamed node';
     expected_value = '{"a":"b","c":"d"}';
     resulting_value = (select node from aux_json_node(null
-                                                        , (select node from aux_json_node('a', 'b', 'str', :OPTIONAL, :ADD_DELIMITER, :NO_FORMATTING))
+                                                        , (select node from aux_json_node('a', 'b', 'str', :OPTIONAL, :WITH_DELIMITER, :NO_FORMATTING))
                                                         ||(select node from aux_json_node('c', 'd', 'str'))
                                                         , 'obj', :REQUIRED_AS_NULL));
     is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');

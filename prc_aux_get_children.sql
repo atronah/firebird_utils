@@ -1,7 +1,7 @@
 set term ^ ;
 
 -- Returns all child items of specified item with current_id (or each item of table)
-create or alter procedure mds_get_children(
+create or alter procedure aux_get_children(
     table_name ttext32 -- name of table in which the items are searched
     , id_field ttext32 -- name of table field, wherein the item identifier is stored
     , parent_field ttext32 -- name of table field, wherein the parent item identifier is stored
@@ -44,7 +44,7 @@ begin
         has_child = 0;
 
         for select id, parent_id, child_level
-            from mds_get_children(:table_name
+            from aux_get_children(:table_name
                                     , :id_field
                                     , :parent_field
                                     , :id

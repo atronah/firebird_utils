@@ -13,11 +13,14 @@ set term ^ ;
         - `h` or `hh` - hour (`1` or `01`)
         - `m` or `mm` - minute (`1` or `01`)
         - `s` or `ss` - second (`1` or `01`)
+        - `tz` - time zone info (`+03:00`)
 */
 
 create or alter procedure aux_format_date(
     datetime timestamp,
     format varchar(255) = ''
+  , time_zone_hours smallint = null
+  , time_zone_minutes smallint = null
 )
 returns(
     string varchar(255)
@@ -67,6 +70,20 @@ begin
         format = replace(format, 's', val);
     end
 
+    if (format containing 'tz') then
+    begin
+        val = extract(second from datetime);
+        time_zone_hours = coalesce(time_zone_hours, 0);
+        time_zone_minutes = coalesce(time_zone_minutes, 0);
+        format = replace(format
+                            , 'tz'
+                            , iif(time_zone_hours >=0, '+', '-')
+                                || lpad(abs(time_zone_hours), 2, '0')
+                                || ':'
+                                || lpad(abs(time_zone_minutes), 2, '0')
+        );
+    end
+
     string = format;
     suspend;
 end^
@@ -79,4 +96,5 @@ comment on parameter aux_format_date.format is 'Format string is case sensitive 
 - `yy` or `yyyy` - yeat (`22` or `2022`)
 - `h` or `hh` - hour (`1` or `01`)
 - `m` or `mm` - minute (`1` or `01`)
-- `s` or `ss` - second (`1` or `01`)';
+- `s` or `ss` - second (`1` or `01`)
+- `tz` - time zone info (`+03:00`)';

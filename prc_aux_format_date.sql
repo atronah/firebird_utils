@@ -16,11 +16,11 @@ set term ^ ;
 */
 
 create or alter procedure aux_format_date(
-  datetime timestamp,
-  format varchar(255) = ''
+    datetime timestamp,
+    format varchar(255) = ''
 )
 returns(
-  string varchar(255)
+    string varchar(255)
 )
 as
 declare val integer;

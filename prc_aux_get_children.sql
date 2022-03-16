@@ -23,11 +23,14 @@ begin
     sort_order = 0;
 
     child_level = base_level;
+    parent_field = coalesce(parent_field, 0);
+    current_id = coalesce(current_id, 0);
+
     stmt = 'select
                 ' || :id_field || ' as id,
                 ' || :parent_field || ' as parent_id
             from ' || :table_name || '
-            where coalesce(' || :parent_field || ', 0) = ' || coalesce(current_id, 0) || '
+            where ' || parent_field || ' = ' || current_id || '
             ' || iif(coalesce(sort_expression, '') > '', 'order by ' || sort_expression, '');
 
 

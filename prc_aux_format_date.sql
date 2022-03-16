@@ -9,11 +9,11 @@ set term ^ ;
     Format string is case sensitive and supports follow literals:
         - `d` or `dd` - day (`1` or `01`)
         - `M` or `MM` - month (`1` or `01`)
-        - `yy` or `yyyy` - yeat (`22` or `2022`)
+        - `yy` or `yyyy` - year (`22` or `2022`)
         - `h` or `hh` - hour (`1` or `01`)
         - `m` or `mm` - minute (`1` or `01`)
         - `s` or `ss` - second (`1` or `01`)
-        - `tz` - time zone info (`+03:00`)
+        - `tz` - time zone as offsets from Coordinated Universal Time (UTC, i.e. `+03:00`)
 */
 
 create or alter procedure aux_format_date(
@@ -84,6 +84,7 @@ begin
         );
     end
 
+
     string = format;
     suspend;
 end^
@@ -93,8 +94,8 @@ set term ; ^
 comment on parameter aux_format_date.format is 'Format string is case sensitive and supports follow literals:
 - `d` or `dd` - day (`1` or `01`)
 - `M` or `MM` - month (`1` or `01`)
-- `yy` or `yyyy` - yeat (`22` or `2022`)
+- `yy` or `yyyy` - year (`22` or `2022`)
 - `h` or `hh` - hour (`1` or `01`)
 - `m` or `mm` - minute (`1` or `01`)
 - `s` or `ss` - second (`1` or `01`)
-- `tz` - time zone info (`+03:00`)';
+- `tz` - time zone as offsets from Coordinated Universal Time (UTC, i.e. `+03:00`)';

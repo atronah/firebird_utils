@@ -15,7 +15,7 @@ declare text_len bigint;
 declare delimiter_len bigint;
 declare part_begin bigint;
 begin
-    if (coalesce(text, '') = '' or coalesce(delimiter, '') = '') then
+    if (coalesce(text, '') = '' or char_length(coalesce(delimiter, '')) = 0) then
     begin
         idx = 1;
         part = text;

@@ -94,15 +94,21 @@ begin
     else if (value_type in ('date', 'datetime')) then
     begin
         val_datetime = cast(val as timestamp);
-        val = '"' || extract(year from val_datetime)
-                    || '-' || lpad(extract(month from val_datetime), 2, '0')
-                    || '-' || lpad(extract(day from val_datetime), 2, '0')
-                    || iif(value_type = 'datetime'
-                            , iif(format_str = '1', ' ', 'T')
-                                || lpad(extract(hour from val_datetime), 2, '0')
-                                || ':' || lpad(extract(minute from val_datetime), 2, '0')
-                                || ':' || lpad(trunc(extract(second from val_datetime)), 2, '0')
-                            , '')
+        if (value_type = 'datetime') then
+        begin
+            -- WIP: default format for datetime and for date
+            format_str = case :format_str
+                            when 0 then 'yyyy-MM-ddThh:mm:ss'
+                            when 1 then 'yyyy-MM-dd hh:mm:ss'
+                            else :format_str
+                        end
+        end
+        format_str = coalesce(nullif(format_str, ''), 'yyyy-MM-dd')
+        val = '"' || (select string
+                        from aux_format_date(:val_datetime
+                                            , iif(:value_type = 'datetime'
+                                                    ,
+                                                    , )))
                 || '"';
     end
     else if (value_type = 'time') then

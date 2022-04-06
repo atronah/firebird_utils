@@ -1,4 +1,10 @@
-SET LIST on;
+SET LIST ON;
+
+-- SET WIDTH test_name 50;
+-- SET WIDTH test_result 8;
+-- SET WIDTH expected_value 30;
+-- SET WIDTH resulting_value 30;
+-- SET WIDTH summary 10;
 
 set term ^ ;
 

@@ -76,7 +76,19 @@ begin
                     where part <> ''
                     into val;
 
-        val = trim(trim(trailing ',' from val));
+        -- trailing last white spaces and comma (instead of `val = trim(trim(trailing ',' from val));`)
+        pos = char_length(val);
+        while (pos > 0) do
+        begin
+            if (substring(val from pos for 1)
+                    in (ASCII_CHAR(13), ASCII_CHAR(10), ASCII_CHAR(32), ',')
+            ) then
+            begin
+                val = left(val, pos - 1) || substring(val from pos + 1);
+                pos = pos - 1;
+            end
+            else break;
+        end
 
         val = case value_type
                     when 'obj' then iif(val similar to '[[:WHITESPACE:]]*&{%' escape '&'

@@ -33,6 +33,11 @@ declare SPACE_DUMMY varchar(32) = '<<FBUTILS_JSON_SPACE>>'; -- to substitute it 
 declare endl varchar(2) = '
 ';
 begin
+    -- WARNING:
+    -- if your database has WIN1251 encofing, you should create this procedure in that database only in WIN1251 connection
+    -- (I mean, use `isql -ch win1251 your_database -i prc_aux_json_node.sql`)
+    -- otherwise (if you create procedure in utf8 charset for win1251 databse) you could get error
+    -- `Cannot transliterate character between character sets` when you use this procedure
     node = '';
 
     value_type = coalesce(value_type, 'str');

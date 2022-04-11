@@ -70,6 +70,10 @@ begin
 
     if (value_type in ('obj', 'list')) then
     begin
+        if (required = :OPTIONAL
+                and val similar to '[[:WHITESPACE:]]*'
+        ) then val = null;
+
         if (formatting = HUMAN_READABLE_FORMATTING and val containing endl)
             then select list(:indent || :indent || part, :endl)
                     from aux_split_text(:val, :endl, 0)

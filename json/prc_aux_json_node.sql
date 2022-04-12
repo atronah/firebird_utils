@@ -3,8 +3,8 @@ set term ^ ;
 create or alter procedure aux_json_node(
     name varchar(255) -- name of node
     , val blob sub_type text -- value of node
-    , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
-    , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
+    , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, array or list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
+    , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `array` - `[]`, for `str` - `""`);
     , add_delimiter smallint = null -- if distinct from zero comma will be put after node
     , formatting smallint = null -- if distinct from zero indents will be put in resulted node
 )
@@ -21,7 +21,7 @@ declare indent varchar(4) = '    ';
 -- -- aux_json_node.required input parameter
 declare OPTIONAL bigint = 0; -- 0 - no node (empty string) for null values;
 declare REQUIRED_AS_NULL bigint = 1; -- 1 - empty node with `null` as value;
-declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);
+declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `obj` - `{}`, for `array`/`list` - `[]`, for `str` - `""`);
 -- -- aux_json_node.human_readable input parameter
 declare NO_FORMATTING smallint = 0;
 declare HUMAN_READABLE_FORMATTING smallint = 1;
@@ -60,20 +60,22 @@ begin
         value_type = substring(value_type from 1 for pos - 1);
     end
 
-    if (value_type = 'node')
-        then value_type = 'obj';
-
+    value_type = case value_type
+                    when 'node' then 'obj'
+                    when 'list' then 'array'
+                    else value_type
+                end;
 
     if (val is null and required = REQUIRED_AS_EMPTY) then
     begin
         val = case value_type
                     when 'obj' then '{}'
-                    when 'list' then '[]'
+                    when 'array' then '[]'
                     else ''
                 end;
     end
 
-    if (value_type in ('obj', 'list')) then
+    if (value_type in ('obj', 'array')) then
     begin
         if (required = :OPTIONAL
                 and val similar to '[[:WHITESPACE:]]*'
@@ -103,7 +105,7 @@ begin
                     when 'obj' then iif(val similar to '[[:WHITESPACE:]]*&{%' escape '&'
                                         , val
                                         , '{' || endl || indent || val || endl || '}')
-                    when 'list' then iif(val similar to '[[:WHITESPACE:]]*&[%' escape '&'
+                    when 'array' then iif(val similar to '[[:WHITESPACE:]]*&[%' escape '&'
                                         , val
                                         , '[' || endl || val || endl || ']')
                 end;
@@ -165,11 +167,11 @@ set term ; ^
 comment on procedure aux_json_node is 'Returns json node';
 comment on parameter aux_json_node.name is 'name of node';
 comment on parameter aux_json_node.val is 'value of node';
-comment on parameter aux_json_node.value_type is 'type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)';
+comment on parameter aux_json_node.value_type is 'type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, array or list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)';
 comment on parameter aux_json_node.required is 'requirement of node:
 - 0 - no node (empty string) for null values;
 - 1 - empty node with `null` as value;
-- 2 - empty node with empty value (for `obj` - `{}`, for `list` - `[]`, for `str` - `""`);';
+- 2 - empty node with empty value (for `obj` - `{}`, for `array`/`list` - `[]`, for `str` - `""`);';
 comment on parameter aux_json_node.formatting is 'if distinct from zero indents will be put in resulted node';
 comment on parameter aux_json_node.add_delimiter is 'if distinct from zero comma will be put after node';
 

@@ -26,6 +26,8 @@ as
 declare state smallint;
 declare pos bigint;
 declare c varchar(1);
+declare prev_c varchar(1);
+declare prev_prev_c varchar(1);
 declare child_node_index bigint;
 declare root_node_start bigint;
 declare root_node_end bigint;
@@ -237,7 +239,12 @@ begin
             end
             else if (state = IN_STRING) then
             begin
-                if (c = '"') then
+                if (c = '"' and
+                        -- skip escaped quotes inside string `\"`
+                        -- but do not skip end quote just after escaped backslash `\\"`
+                        (prev_c is distinct from trim('\ ')
+                            or prev_prev_c is not distinct from trim('\ ')) -- except
+                ) then
                 begin
                     state = AFTER_STRING;
                     root_node_end = pos;
@@ -305,6 +312,8 @@ begin
                 else error_code = UNEXPECTED_SYMBOL_IN_NUMBER_ERR;
             end
         end
+        prev_prev_c = prev_c;
+        prev_c = c;
     end
 
     if (error_code <> NO_ERROR) then
@@ -336,8 +345,13 @@ begin
         name = nullif(root_name, '');
         node_path = '/';
         val = substring(json from value_start for value_end - value_start + 1);
-        if (value_type = STR)
-            then val = substring(val from 2 for char_length(val) - 2);
+        if (value_type = STR) then
+        begin
+            val = substring(val from 2 for char_length(val) - 2);
+            val = replace(val, trim('\\ '), '<<<aux_json_parse_escaped_backslash>>>');
+            val = replace(val, trim('\ '), '');
+            val = replace(val, '<<<aux_json_parse_escaped_backslash>>>', trim('\ '));
+        end
         node_index = coalesce(root_node_index, 0);
         suspend;
     end

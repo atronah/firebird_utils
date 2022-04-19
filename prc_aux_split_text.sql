@@ -19,7 +19,7 @@ begin
     begin
         idx = 1;
         part = text;
-        suspend;
+        if (text is not null) then suspend;
         exit;
     end
 

@@ -18,6 +18,7 @@ returns(
     , node_name varchar(1024)
     , value_name varchar(1024)
     , value_type varchar(8)
+    , value_level bigint
     , val blob sub_type text
     , error_code bigint
     , error_text varchar(1024)
@@ -61,11 +62,11 @@ begin
                     suffix = decode(node_type, 'string', '"', '');
                     node = prefix || node_value || suffix;
 
-                    value_type = null; val = null; value_name = null;
-                    for select name, value_type, val, error_code, error_text
+                    value_type = null; val = null; value_name = null; value_level = null;
+                    for select name, value_type, val, error_code, error_text, level
                         from aux_json_parse(:node)
-                        where name = :value_param
-                        into value_name, value_type, val, error_code, error_text
+                        where name = :value_param and level = 1
+                        into value_name, value_type, val, error_code, error_text, value_level
                     do suspend;
                     if (row_count = 0) then suspend;
                     error_code = 0; error_text = '';

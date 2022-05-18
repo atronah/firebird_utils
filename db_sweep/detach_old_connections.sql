@@ -1,0 +1,1 @@
+delete from mon$attachments where mon$timestamp < cast(dateadd(-1 day to current_date) || ' 22:00:00' as timestamp); commit;

@@ -24,24 +24,13 @@ if "%day:~0,1%" == " " set day=0%day:~1,1%
 set datetimef=%year%%month%%day%_%hour%%min%%secs%
 
 echo "========> connections at %year%-%month%-%day% %hour%:%min%:%secs% for %db_connect% <========" >> %gstat_log%
-REM example of count_connections.sql
-REM    select
-REM        count(*) as all_conections
-REM        , count(iif(mon$timestamp < cast(dateadd(-1 day to current_date) || ' 22:00:00' as timestamp)
-REM                , mon$attachment_id
-REM               , null)
-REM        ) as old_connections
-REM    from mon$attachments;
 %fb_root%\isql -user %db_user% -pas %db_password% -i %sql_folder%\count_connections.sql %db_connect% >> %gstat_log%
-
 
 REM echo "========> detach all and execute special script %year%-%month%-%day% %hour%:%min%:%secs% <========" >> %gstat_log%
 REM %fb_root%\isql -user %db_user% -pas %db_password% -i %sql_folder%\detach_all.sql %db_connect%
 REM %fb_root%\isql -user %db_user% -pas %db_password% -i %sql_folder%\after_detach_all.sql %db_connect%
 
 echo "========> detaching old connections %year%-%month%-%day% %hour%:%min%:%secs% for %db_connect% <========" >> %gstat_log%
-REM example of detach_old_connections.sql
-REM     delete from mon$attachments where mon$timestamp < cast(dateadd(-1 day to current_date) || ' 22:00:00' as timestamp); commit;
 %fb_root%\isql -user %db_user% -pas %db_password% -i %sql_folder%\detach_old_connections.sql %db_connect%
 
 echo "========> connections after detaching at %year%-%month%-%day% %hour%:%min%:%secs% for %db_connect% <========" >> %gstat_log%

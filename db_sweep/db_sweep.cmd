@@ -7,7 +7,7 @@ set db_connect="127.0.0.1:box_med"
 set db_user=SYSDBA
 set db_password=masterkey
 set gstat_log="D:\Infodata\gstat.log"
-set sql_folder="D:\Infodata\"
+set sql_folder="D:\Infodata"
 
 REM Current date and time
 set hour=%time:~0,2%

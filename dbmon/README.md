@@ -52,7 +52,7 @@ instead you can create required objects directly in monitored database and run [
 
 - Create bash/batch script to run regulary checking for changes.
     ```cmd
-    echo execute procedure dbmon_check_for_changes('127.0.0.1:db_to_check', 'SYSDBA', 'masterkey'); | isql -user SYSDBA C:\DB\DBMON.FDB
+    echo "execute procedure dbmon_check_for_changes('127.0.0.1:db_to_check', 'SYSDBA', 'masterkey');" | isql -user SYSDBA C:\DB\DBMON.FDB
     ```
 - Add that script to scheduler (for example, into `crontab` for unix)
 - Done

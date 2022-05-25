@@ -39,7 +39,7 @@ declare TYPE_SEQUENCE type of column rdb$dependencies.rdb$dependent_type = 14;
 -- declare TYPE_UDF type of column rdb$dependencies.rdb$dependent_type = 15;
 -- declare TYPE_COLLATION type of column rdb$dependencies.rdb$dependent_type = 17;
 declare TABLE_TYPE_SYS_OR_USER type of column rdb$relations.rdb$relation_type = 0; -- 0 - system or user-defined table
-declare TABLE_TYPE_VEIW type of column rdb$relations.rdb$relation_type = 1; -- 1 - view
+declare TABLE_TYPE_VIEW type of column rdb$relations.rdb$relation_type = 1; -- 1 - view
 declare TABLE_TYPE_EXTERNAL type of column rdb$relations.rdb$relation_type = 2; -- 2 - external table
 declare TABLE_TYPE_MONITORING type of column rdb$relations.rdb$relation_typE = 3; -- 3 - monitoring table
 declare TABLE_TYPE_GTT_TRANSACTION_LVL type of column rdb$relations.rdb$relation_type = 4; -- 4 - connection-level GTT (PRESERVE ROWS)
@@ -79,7 +79,7 @@ begin
                     from rdb$relations
                     where rdb$relation_name = :object_name
                         and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TABLE_TYPE_SYS_OR_USER
-                                                                            , :TABLE_TYPE_VEIW
+                                                                            , :TABLE_TYPE_VIEW
                                                                             , :TABLE_TYPE_GTT_TRANSACTION_LVL
                                                                             , :TABLE_TYPE_GTT_CONNECTION_LVL))
             end;

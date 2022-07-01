@@ -60,8 +60,13 @@ declare ENDL varchar(2) = '
 begin
     -- create exception ERROR 'ERROR';
 
-    root_path = coalesce(root_path, '');
-    path = root_path;
+    root_path = coalesce(trim(root_path), '');
+    if (root_path not starts with '/') then
+        root_path = '/' || root_path;
+
+    path = trim(root_path);
+    if (right(path, 1) = '/' and path <> '/')
+        then path = substring(path from 1 for char_length(path) - 1);
 
     root_level = coalesce(root_level, 0);
     level = root_level;
@@ -69,9 +74,6 @@ begin
     name = '';
     ns_alias = '';
     content_offset = 0;
-
-    if (root_path <> '' and right(root_path, 1) <> '/')
-        then root_path = root_path || '/';
 
     name_pattern = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_]*'; -- name pattern
     aliased_name_pattern = '(' || :name_pattern || ':)*' || :name_pattern; -- aliased name pattern
@@ -151,8 +153,10 @@ begin
             saved_endpos = endpos;
 
             for select path, ns_uri, ns_alias, name, content, attributes, startpos, endpos, level
-                from aux_xml_all_nodes(:content, :root_path || :name, :level + 1)
-                into :path, ns_uri, ns_alias, name, content, attributes, startpos, endpos, level
+                from aux_xml_all_nodes(:content
+                                        , :root_path || trim(iif(:root_path <> '/', '/', '')) || :name
+                                        , :level + 1)
+                into path, ns_uri, ns_alias, name, content, attributes, startpos, endpos, level
             do
             begin
                 startpos = content_offset + startpos - 1;

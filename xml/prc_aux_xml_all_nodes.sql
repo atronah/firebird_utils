@@ -41,10 +41,10 @@ returns(
 )
 as
 declare fullname varchar(1024);
-declare np varchar(1024);
-declare anp varchar(1024);
-declare attrp varchar(1024);
-declare attrsp varchar(1024);
+declare name_pattern varchar(1024);
+declare aliased_name_pattern varchar(1024);
+declare attribute_pattern varchar(1024);
+declare attribute_list_pattern varchar(1024);
 declare otp varchar(1024);
 declare open_tag varchar(4096);
 declare next_similar bigint;
@@ -73,11 +73,11 @@ begin
     if (root_path <> '' and right(root_path, 1) <> '/')
         then root_path = root_path || '/';
 
-    np = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_]*'; -- name pattern
-    anp = '(' || :np || ':)*' || :np; -- aliased name pattern
-    attrp = :anp || '\s*=\s*"[^"]*"'; -- attribute pattern
-    attrsp = '(\s*' || :attrp || ')+'; -- attributes pattern
-    otp = '<' || :anp || '(\s+' || :attrp || ')*\s*/?>'; -- open tag pattern
+    name_pattern = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_]*'; -- name pattern
+    aliased_name_pattern = '(' || :name_pattern || ':)*' || :name_pattern; -- aliased name pattern
+    attribute_pattern = :aliased_name_pattern || '\s*=\s*"[^"]*"'; -- attribute pattern
+    attribute_list_pattern = '(\s*' || :attribute_pattern || ')+'; -- attributes pattern
+    otp = '<' || :aliased_name_pattern || '(\s+' || :attribute_pattern || ')*\s*/?>'; -- open tag pattern
 
     startpos = position('<', xml);
     while (startpos > 0) do
@@ -93,8 +93,8 @@ begin
         begin
             endpos = startpos + char_length(open_tag) - 1; -- position of `>` for open tag
             -- returns `ns:name` for `<ns:name a="x">`
-            fullname = (select substring(match from 2) from mds_aux_regexp_search('<' || :anp, :open_tag, 1));
-            attributes = (select trim(match) from mds_aux_regexp_search(:attrsp, :open_tag, 1));
+            fullname = (select substring(match from 2) from mds_aux_regexp_search('<' || :aliased_name_pattern, :open_tag, 1));
+            attributes = (select trim(match) from mds_aux_regexp_search(:attribute_list_pattern, :open_tag, 1));
             name = substring(fullname from maxvalue(position(':' in fullname) + 1, 0));
             ns_alias = substring(fullname from 1 for maxvalue(position(name in fullname) - 2, 0));
 

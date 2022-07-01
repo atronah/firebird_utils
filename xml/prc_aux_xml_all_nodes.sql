@@ -75,7 +75,8 @@ begin
 
     np = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_]*'; -- name pattern
     anp = '(' || :np || ':)*' || :np; -- aliased name pattern
-    attrp = :anp || '\s*=\s*"[^"]*"'; --attribute pattern
+    attrp = :anp || '\s*=\s*"[^"]*"'; -- attribute pattern
+    attrsp = '(\s*' || :attrp || ')+'; -- attributes pattern
     otp = '<' || :anp || '(\s+' || :attrp || ')*\s*/?>'; -- open tag pattern
 
     startpos = position('<', xml);
@@ -93,7 +94,7 @@ begin
             endpos = startpos + char_length(open_tag) - 1; -- position of `>` for open tag
             -- returns `ns:name` for `<ns:name a="x">`
             fullname = (select substring(match from 2) from mds_aux_regexp_search('<' || :anp, :open_tag, 1));
-            attributes = (select match from mds_aux_regexp_search(:attrp, :open_tag, 1));
+            attributes = (select trim(match) from mds_aux_regexp_search(:attrsp, :open_tag, 1));
             name = substring(fullname from maxvalue(position(':' in fullname) + 1, 0));
             ns_alias = substring(fullname from 1 for maxvalue(position(name in fullname) - 2, 0));
 

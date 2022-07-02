@@ -3,19 +3,19 @@ set term ^ ;
 -- creates dummy procedure to prevent errors because of changed input params for recursive procedure
 create or alter procedure aux_xml_all_nodes(
     xml blob sub_type text
-    , root_path blob sub_type text = null
-    , root_level smallint = null
+    , parent_path blob sub_type text = null
+    , parent_level smallint = null
 )
 returns(
-    path blob sub_type text,
-    ns_uri varchar(1024),
-    ns_alias varchar(1024),
-    name varchar(1024),
-    content blob sub_type text,
-    attributes blob sub_type text,
-    startpos bigint,
-    endpos bigint,
-    level smallint
+    path blob sub_type text
+    , ns_uri varchar(1024)
+    , ns_alias varchar(1024)
+    , name varchar(1024)
+    , content blob sub_type text
+    , attributes blob sub_type text
+    , startpos bigint
+    , endpos bigint
+    , level smallint
 )
 as
 begin
@@ -25,8 +25,8 @@ end^
 -- Parse XML and returns all nodes of it with its pathes and content
 create or alter procedure aux_xml_all_nodes(
     xml blob sub_type text
-    , root_path blob sub_type text = null
-    , root_level smallint = null
+    , parent_path blob sub_type text = null
+    , parent_level smallint = null
 )
 returns(
     path blob sub_type text,
@@ -63,16 +63,16 @@ begin
 
     -- create exception ERROR 'ERROR';
 
-    root_path = coalesce(trim(root_path), '');
-    if (root_path not starts with '/') then
-        root_path = '/' || root_path;
+    parent_path = coalesce(trim(parent_path), '');
+    if (parent_path not starts with '/')
+        then parent_path = '/' || parent_path;
 
-    path = trim(root_path);
+    path = trim(parent_path);
     if (right(path, 1) = '/' and path <> '/')
         then path = substring(path from 1 for char_length(path) - 1);
 
-    root_level = coalesce(root_level, 0);
-    level = root_level;
+    parent_level = coalesce(parent_level, 0);
+    level = parent_level;
 
     name = '';
     ns_alias = '';
@@ -157,7 +157,7 @@ begin
 
             for select path, ns_uri, ns_alias, name, content, attributes, startpos, endpos, level
                 from aux_xml_all_nodes(:content
-                                        , :root_path || trim(iif(:root_path <> '/', '/', '')) || :name
+                                        , :parent_path || trim(iif(:parent_path <> '/', '/', '')) || :name
                                         , :level + 1)
                 into path, ns_uri, ns_alias, name, content, attributes, startpos, endpos, level
             do
@@ -166,8 +166,8 @@ begin
                 endpos = content_offset + endpos - 1;
                 suspend;
             end
-            path = root_path;
-            level = root_level;
+            path = parent_path;
+            level = parent_level;
             startpos = saved_startpos;
             endpos = saved_endpos;
         end
@@ -182,8 +182,8 @@ set term ; ^
 
 comment on procedure aux_xml_all_nodes is 'Parse XML and returns all nodes of it with its pathes and content';
 comment on parameter aux_xml_all_nodes.xml is 'XML data to parse';
-comment on parameter aux_xml_all_nodes.root_path is 'Service input param to pass path in recursive call';
-comment on parameter aux_xml_all_nodes.root_level is 'Service input param to pass level path in recursive call';
+comment on parameter aux_xml_all_nodes.parent_path is 'Service input param to pass path in recursive call';
+comment on parameter aux_xml_all_nodes.parent_level is 'Service input param to pass level path in recursive call';
 comment on parameter aux_xml_all_nodes.path is 'Path of XML node (`/` for root). Always starts with `/` and do NOT contain `/` at the end';
 comment on parameter aux_xml_all_nodes.ns_uri is 'URI of namespace, declared within node (not yet implemented)';
 comment on parameter aux_xml_all_nodes.ns_alias is 'Alias of node name';

@@ -8,6 +8,7 @@ returns(
     alias varchar(1024)
     , name varchar(1024)
     , val varchar(16000)
+    , full_attribute varchar(16000)
 )
 as
 declare pos bigint;
@@ -53,6 +54,8 @@ begin
         if (alias > '')
             then alias = (select result from aux_strip_text(:alias, :allowed_name_symbols, 1));
         name = (select result from aux_strip_text(:name, :allowed_name_symbols, 1));
+
+        full_attribute = trim(coalesce(alias || ':', '')) || name || '="' || val || '"';
         suspend;
     end
 end^

@@ -75,7 +75,7 @@ begin
     ns_alias = '';
     content_offset = 0;
 
-    name_pattern = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_]*'; -- name pattern
+    name_pattern = '[a-zA-Zа-яА-ЯёЁ][a-zA-Zа-яА-ЯёЁ0-9_\.]*'; -- name pattern
     aliased_name_pattern = '(' || :name_pattern || ':)*' || :name_pattern; -- aliased name pattern
     attribute_pattern = :aliased_name_pattern || '\s*=\s*"[^"]*"'; -- attribute pattern
     attribute_list_pattern = '(\s*' || :attribute_pattern || ')+'; -- attributes pattern

@@ -41,13 +41,15 @@ begin
             state = state + 1;
             continue;
         end
-        else if (state not in (STATE_MIDNAME) and c similar to '[[:ALPHA:]А-ЯЁ]'
-                    and (use_case_to_split > 0 and prev_c is distinct from upper(prev_c))) then
+        else if (use_case_to_split > 0
+                    and state not in (STATE_MIDNAME)
+                    and c similar to '[A-ZА-ЯЁ]'
+                    and prev_c is distinct from '-') then
         begin
             state = state + 1;
         end
 
-        if (upper(c) similar to '[-()[:ALPHA:]А-ЯЁ.]'
+        if (upper(c) similar to '[-A-ZА-ЯЁ.]'
                 or (c = ' ' and state = STATE_MIDNAME)) then
         begin
             if (state in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME))
@@ -60,10 +62,16 @@ begin
             else if (state = STATE_MIDNAME)
                 then midname = midname || c;
         end
+        else if (state = STATE_MIDNAME) then break;
 
-        if (c = '.' and state not in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME))
+        if (c = '.' and state not in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME, STATE_MIDNAME))
             then state = state + 1;
     end
+
+    lastname = nullif(lastname, '');
+    firstname = nullif(firstname, '');
+    midname = nullif(midname, '');
+
     suspend;
 end^
 

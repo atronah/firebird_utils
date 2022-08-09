@@ -44,3 +44,5 @@ if [ $verbose = true ]; then
 else
     test_results=$(${scriptpath}/tests/run_tests.sh "$db" "$db_user" "$db_password")
 fi
+
+read -p "Press any key to resume ..."

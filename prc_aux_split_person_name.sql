@@ -36,17 +36,19 @@ begin
         c = substring(fullname from pos for 1);
         pos = pos + 1;
 
-        if (c = ' ' and state not in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME)) then
+        if (c = ' ' and state not in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME, STATE_MIDNAME)) then
         begin
             state = state + 1;
             continue;
         end
-        else if (c similar to '[[:ALPHA:]А-ЯЁ]' and (use_case_to_split > 0 and prev_c is distinct from upper(prev_c))) then
+        else if (state not in (STATE_MIDNAME) and c similar to '[[:ALPHA:]А-ЯЁ]'
+                    and (use_case_to_split > 0 and prev_c is distinct from upper(prev_c))) then
         begin
             state = state + 1;
         end
 
-        if (upper(c) similar to '[-()[:ALPHA:]А-ЯЁ.]') then
+        if (upper(c) similar to '[-()[:ALPHA:]А-ЯЁ.]'
+                or (c = ' ' and state = STATE_MIDNAME)) then
         begin
             if (state in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME))
                 then state = state + 1;
@@ -61,14 +63,6 @@ begin
 
         if (c = '.' and state not in (STATE_BEFORE_LASTNAME, STATE_BEFORE_FIRSTNAME, STATE_BEFORE_MIDNAME))
             then state = state + 1;
-
-        if (state > STATE_MIDNAME and pos < len) then
-        begin
-            lastname = lastname || ' ' || firstname;
-            firstname = midname;
-            midname = '';
-            state = STATE_BEFORE_MIDNAME;
-        end
     end
     suspend;
 end^

@@ -2,6 +2,7 @@ set term ^ ;
 
 create or alter procedure aux_split_person_name(
     fullname varchar(255)
+    , use_case_to_split smallint = null
 )
 returns(
     lastname varchar(64)
@@ -21,11 +22,14 @@ declare STATE_FIRSTNAME smallint = 3;
 declare STATE_BEFORE_MIDNAME smallint = 4;
 declare STATE_MIDNAME smallint = 5;
 begin
+    use_case_to_split = coalesce(use_case_to_split, 0);
+
     pos = 1;
     len = char_length(fullname);
 
     state = STATE_BEFORE_LASTNAME;
     lastname = ''; firstname = ''; midname = '';
+
     while (pos <= len) do
     begin
         prev_c = c;
@@ -37,7 +41,7 @@ begin
             state = state + 1;
             continue;
         end
-        else if (c similar to '[[:ALPHA:]А-ЯЁ]' and prev_c is distinct from upper(prev_c)) then
+        else if (c similar to '[[:ALPHA:]А-ЯЁ]' and (use_case_to_split > 0 and prev_c is distinct from upper(prev_c))) then
         begin
             state = state + 1;
         end

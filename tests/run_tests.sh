@@ -47,6 +47,11 @@ isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/prc_aux_json_nod
 test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ../json/test_aux_json_node.sql | tee >(cat - >&8))
 check_result "$test_result"
 
+echo 'testing procedure aux_split_person_name'
+isql -user ${db_user} -pas ${db_password} ${db_name} -i ../prc_aux_split_person_name.sql
+test_result=$(isql -user ${db_user} -pas ${db_password} ${db_name} -i ./test_aux_split_person_name.sql | tee >(cat - >&8))
+check_result "$test_result"
+
 rm -f ${db_name}
 
 popd

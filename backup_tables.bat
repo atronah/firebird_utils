@@ -66,7 +66,10 @@ for %%T in (%TABLE_LIST%) do (
     for /F "tokens=*" %%S in ('"%isql_util%" -user %db_user% -pas %db_pass% -q -i TEMP_SCRIPT.sql %db_connect%') do (
         echo executing SQL-script to backup !part_number! part of %%T into atchive !result_filename!
         echo %%S > TEMP_SUB_SCRIPT.sql
-        "%isql_util%" -user %db_user% -pas %db_pass% -q -i TEMP_SUB_SCRIPT.sql %db_connect% | %zip_util%  a -si%%T.part!part_number!.sql !result_filename!
+        rem python used just to strip string, remove that line if it's not installed
+        "%isql_util%" -user %db_user% -pas %db_pass% -q -i TEMP_SUB_SCRIPT.sql %db_connect% ^
+                | python3 -c "import sys,os; print(os.linesep.join(map(str.strip, sys.stdin.readlines())))" ^
+                | %zip_util%  a -si%%T.part!part_number!.sql !result_filename!
         set /A part_number=part_number+1
     )
     echo removing SQL-scripts TEMP_SCRIPT.sql and TEMP_SUB_SCRIPT.sql

@@ -13,7 +13,7 @@ set zip_util=7z
 set db_connect=%1
 set db_user=CHEA
 set db_pass=PDNTP
-set BUNCH_SIZE=10000
+set BUNCH_SIZE=%3
 set TABLE_LIST=%~2
 
 

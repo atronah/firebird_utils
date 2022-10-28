@@ -16,7 +16,7 @@ work_dir="/var/db/backups/auto/tmp"
 skip_restore="F"
 through_console="F"
 # Parse arguments
-while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
+while getopts "g:h:d:u:p:o:w:m:n:z:e:r:sc" opt; do
     case $opt in
         g) fb_gbak="$OPTARG"
         ;;
@@ -44,8 +44,8 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
         ;;
         s) skip_restore="T"
         ;;
-        c) through_console="T"
-        skip_restore="T"
+        c) through_console="T";
+           skip_restore="T"
         ;;
         \?) echo "Invalid option -$OPTARG" >&2
         echo "usage: db_autobackup.sh [arguments]"
@@ -64,7 +64,7 @@ while getopts ":g:h:d:u:p:o:w:m:n:z:e:r:s:c" opt; do
         echo "-r /var/db/backups/auto/tmp               directory for restore (work directory if not specified)"
         echo "-s                                        skip restore"
         echo "-c                                        through console: making backup direct to 7z archive without creating .fbk file"
-    exit 1
+        exit 1
         ;;
     esac
 done
@@ -86,6 +86,8 @@ echo "work dir:             $work_dir (used $(df -h ${work_dir} | awk 'NR>1 {pri
 echo "backup fullpath:      $backup_fullpath"
 echo "restore fullpath:     $restore_fullpath"
 echo "archive name:         $archive_name"
+echo "skip restore:         $skip_restore"
+echo "through console:      $through_console"
 
 
 if [ ! -d "$out_dir" ]; then

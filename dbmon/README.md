@@ -50,7 +50,7 @@ instead you can create required objects directly in monitored database and run [
 
 ## Using
 
-- Create bash/batch script to run regulary checking for changes.
+- Create bash/batch script to run regulary checking for changes (in batch for windows remove double quotes `"`).
     ```cmd
     echo "execute procedure dbmon_check_for_changes('127.0.0.1:db_to_check', 'SYSDBA', 'masterkey');" | isql -user SYSDBA C:\DB\DBMON.FDB
     ```

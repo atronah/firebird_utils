@@ -4,9 +4,9 @@ create or alter procedure aux_get_create_statement(
     object_name_in varchar(31)
     , object_type_in smallint = null -- has the same values as RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE
     , only_fields varchar(8192) = null -- if is null - add all fields, otherwise add only specified fields
-    , create_dummy smallint = 0 -- 0 - to create db-object "as is"; 1 - to create dummy version (for table: all fields as varchar; for procedures: without in/out params and body; for triggers: without body); 2 - the same as 1, but to create procedures with all in/out params
-    , add_commit smallint = 0 -- 0 - do not add `commit`; 1 - add `commit` after statement;
-    , alter_mode smallint = 0 -- add (`=0`) or not (otherwise) modificator `or alter`  for creating statement of procedures and triggers
+    , create_dummy smallint = null -- 0 (default) - to create db-object "as is"; 1 - to create dummy version (for table: all fields as varchar; for procedures: without in/out params and body; for triggers: without body); 2 - the same as 1, but to create procedures with all in/out params
+    , add_commit smallint = null -- 0 (default) - do not add `commit`; 1 - add `commit` after statement;
+    , alter_mode smallint = null -- add (`=0`, default) or not (otherwise) modificator `or alter`  for creating statement of procedures and triggers
 )
 returns(
     stmt blob sub_type text
@@ -47,8 +47,12 @@ declare TABLE_TYPE_GTT_CONNECTION_LVL type of column rdb$relations.rdb$relation_
 declare endl varchar(2) = '
 ';
 begin
+    create_dummy = coalesce(create_dummy, 0);
+    add_commit = coalesce(add_commit, 0);
+    alter_mode = coalesce(alter_mode, 0);
+
     object_type = object_type_in;
-    object_name = upper(trim(object_name_in));
+    object_name = upper(trim(object_name_in)); 
 
     if (object_type is null) then
     begin

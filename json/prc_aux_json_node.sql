@@ -16,6 +16,7 @@ as
 declare pos bigint;
 declare format_str varchar(32);
 declare val_datetime timestamp;
+declare val_tmp tblob;
 declare indent varchar(4) = '    ';
 -- constants
 -- -- aux_json_node.required input parameter
@@ -81,11 +82,20 @@ begin
                 and val similar to '[[:WHITESPACE:]]*'
         ) then val = null;
 
-        if (formatting = HUMAN_READABLE_FORMATTING and val containing endl)
-            then select list(:indent || :indent || part, :endl)
-                    from aux_split_text(:val, :endl, 0)
-                    where part <> ''
-                    into val;
+        if (formatting = HUMAN_READABLE_FORMATTING and char_length(val) < 32000) then
+        begin
+            val_tmp = '';
+
+            while (val containing ENDL) do
+            begin
+                val_tmp = val_tmp
+                            || iif(val_tmp > '', indent, '')
+                            || substring(val from 1 for position(:ENDL in val) + char_length(:ENDL) - 1);
+                val = substring(val from position(:ENDL in val) + char_length(:ENDL));
+            end
+            val = val_tmp;
+        end
+
 
         -- trailing last white spaces and comma (instead of `val = trim(trim(trailing ',' from val));`)
         pos = char_length(val);

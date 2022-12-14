@@ -93,7 +93,7 @@ begin
                             || substring(val from 1 for position(:ENDL in val) + char_length(:ENDL) - 1);
                 val = substring(val from position(:ENDL in val) + char_length(:ENDL));
             end
-            val = val_tmp;
+            val = val_tmp || iif(val > '', indent, '') || val;
         end
 
 

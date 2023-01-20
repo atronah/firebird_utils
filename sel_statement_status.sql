@@ -22,6 +22,7 @@ select
     io.mon$page_marks as "Page Marks",
 
     a.mon$remote_process as remote_process,
+    a.mon$server_pid as server_pid,
     'delete from mon$statements where mon$statement_id = ' || s.mon$statement_id as delete_stmt
 from mon$statements as s
     inner join mon$record_stats as rs on rs.mon$stat_id = s.mon$stat_id

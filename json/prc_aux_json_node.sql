@@ -16,7 +16,7 @@ as
 declare pos bigint;
 declare format_str varchar(32);
 declare val_datetime timestamp;
-declare val_tmp tblob;
+declare val_tmp blob sub_type text;
 declare indent varchar(4) = '    ';
 -- constants
 -- -- aux_json_node.required input parameter

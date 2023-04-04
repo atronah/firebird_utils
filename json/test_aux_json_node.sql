@@ -132,10 +132,10 @@ begin
     -- -- -- --
     for select 'null: list as nothing' as n, :OPTIONAL as r, 'list' as t, '' as expected_value from rdb$database union all
         select 'null: list as null' as n, :REQUIRED_AS_NULL as r, 'list' as t, '"null": null' as expected_value from rdb$database union all
-        select 'null: list as empty' as n, :REQUIRED_AS_EMPTY as r, 'list' as t, '"null": []' as expected_value from rdb$database union all
+        select 'null: list as empty' as n, :REQUIRED_AS_EMPTY as r, 'list' as t, '"null":     []' as expected_value from rdb$database union all
         select 'null: obj as nothing' as n, :OPTIONAL as r, 'obj' as t, '' as expected_value from rdb$database union all
         select 'null: obj as null' as n, :REQUIRED_AS_NULL as r, 'obj' as t, '"null": null' as expected_value from rdb$database union all
-        select 'null: obj as empty' as n, :REQUIRED_AS_EMPTY as r,'obj' as t, '"null": {}' as expected_value from rdb$database union all
+        select 'null: obj as empty' as n, :REQUIRED_AS_EMPTY as r,'obj' as t, '"null":     {}' as expected_value from rdb$database union all
         select 'null: str as nothing' as n, :OPTIONAL as r, 'str' as t, '' as expected_value from rdb$database union all
         select 'null: str as null' as n, :REQUIRED_AS_NULL as r, 'str' as t, '"null": null' as expected_value from rdb$database union all
         select 'null: str as empty' as n, :REQUIRED_AS_EMPTY as r, 'str' as t, '"null": ""' as expected_value from rdb$database

@@ -65,7 +65,7 @@ begin
 
     if (format containing 's') then
     begin
-        val = extract(second from datetime);
+        val = trunc(extract(second from datetime));
         format = replace(format, 'ss', lpad(val, 2, '0'));
         format = replace(format, 's', val);
     end

@@ -147,6 +147,7 @@ begin
                 begin
                     root_val = VALUE_FALSE;
                     state = FINISH; root_node_end = pos + char_length(VALUE_FALSE) - 1;
+                    root_value_type = VALUE_FALSE;
                 end
                 else if (c = left(VALUE_NULL, 1)
                         and substring(json from pos for char_length(VALUE_NULL)) = VALUE_NULL) then

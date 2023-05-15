@@ -6,6 +6,8 @@ create or alter procedure aux_json_to_yaml(
 )
 returns (
     yaml blob sub_type text
+    , error_code bigint
+    , error_text varchar(1024)
 )
 as
 declare node_name varchar(255);
@@ -30,12 +32,14 @@ begin
     is_object_in_array = 0;
     yaml = '';
     for select
-            name, value_type, val, level
+            name, value_type, val, level, error_code, error_text
         from aux_json_parse(:json_in)
         order by node_start
-        into node_name, value_type, val, level
+        into node_name, value_type, val, level, error_code, error_text
     do
     begin
+        if (error_code > 0)
+            then break;
         -- when turned back to higher level
         -- delete from parent_type_stack all types which level lower or equal current
         while (prev_level > level) do

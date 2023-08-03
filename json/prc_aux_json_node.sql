@@ -155,7 +155,15 @@ begin
                     , val
                     , null);
     end
-    else val = '"' || replace(val, '"', '\"') || '"';
+    else
+    begin
+        val = '"'
+                -- escaping some characters (based on info from https://www.tutorialspoint.com/json_simple/json_simple_escape_characters.htm)
+                || replace(replace(val
+                        , trim('\ '), trim('\\ ')) -- extra space + trim used to fix problems with highlighting in some text editors
+                        , '"', '\"')
+            || '"';
+    end
 
     if (val is not null or required > 0) then
     begin

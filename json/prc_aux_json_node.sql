@@ -3,10 +3,10 @@ set term ^ ;
 create or alter procedure aux_json_node(
     name varchar(255) -- name of node
     , val blob sub_type text -- value of node
-    , value_type varchar(16) = null -- type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, array or list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)
-    , required smallint = null -- requirement of node: 0 - no node (empty string) for null values; 1 - empty node with `null` as value; 2 - empty node with empty value (for `obj` - `{}`, for `array` - `[]`, for `str` - `""`);
-    , add_delimiter smallint = null -- if distinct from zero comma will be put after node
-    , formatting smallint = null -- if distinct from zero indents will be put in resulted node
+    , value_type varchar(16) = null -- see comment for parameter
+    , required smallint = null -- see comment for parameter
+    , add_delimiter smallint = null -- see comment for parameter
+    , formatting smallint = null -- see comment for parameter
 )
 returns (
     node blob sub_type text
@@ -185,11 +185,25 @@ set term ; ^
 comment on procedure aux_json_node is 'Returns json node';
 comment on parameter aux_json_node.name is 'name of node';
 comment on parameter aux_json_node.val is 'value of node';
-comment on parameter aux_json_node.value_type is 'type of value `<type>[:<format>]`, where `<type>` - name of type (str, obj or node, array or list, num, bool, date, time, datetime), and `<format>` - formatting way (for `datetime` two fomats are available : `0` - `YYYY-MM-DDThh:mm:ss`, `1` - `YYYY-MM-DD hh:mm:ss`)';
+comment on parameter aux_json_node.value_type is 'type of value `<type>[:<format>]`
+- `<type>` - name of type, supported values:
+    - `str` - text value (within quotas)
+    - `obj` or `node` - json object (within `{` and `}`)
+    - `array` or `list` - json array  (within `[` and `]`)
+    - `num` - json number
+    - `bool` - boolean value (`true` or `false`)
+    - `date` - date value
+    - `time` - time value
+    - `datetime` - date + time value
+- `<format>` - formatting way
+    - for `datetime` available fomats:
+        - `0` - `YYYY-MM-DDThh:mm:ss`
+        - `1` - `YYYY-MM-DD hh:mm:ss`
+';
 comment on parameter aux_json_node.required is 'requirement of node:
 - 0 - no node (empty string) for null values;
 - 1 - empty node with `null` as value;
 - 2 - empty node with empty value (for `obj` - `{}`, for `array`/`list` - `[]`, for `str` - `""`);';
-comment on parameter aux_json_node.formatting is 'if distinct from zero indents will be put in resulted node';
 comment on parameter aux_json_node.add_delimiter is 'if distinct from zero comma will be put after node';
+comment on parameter aux_json_node.formatting is 'if distinct from zero indents will be put in resulted node';
 

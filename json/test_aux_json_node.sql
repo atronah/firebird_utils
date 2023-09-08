@@ -18,6 +18,8 @@ returns (
 )
 as
 declare val blob sub_type text;
+declare tzh smallint; -- timezone hours
+declare tzm smallint; -- timezone minutes
 declare val_type varchar(16);
 declare is_ok smallint;
 declare total_count bigint;
@@ -111,16 +113,19 @@ begin
 
     -- -- -- --
     -- -- -- --
-    for select 'datetime: format 0 (`YYYY-MM-DDThh:mm:ss' as n, 'datetime:0' as t, cast('01.02.2023 12:34:45' as timestamp) as val, '"dt": "2023-02-01T12:34:45"' as expected_value from rdb$database union all
-        select 'datetime: format 1 (`YYYY-MM-DD hh:mm:ss`)' as n, 'datetime:1' as t, cast('01.02.2023 12:34:45' as timestamp) as val, '"dt": "2023-02-01 12:34:45"' as expected_value from rdb$database union all
-        select 'datetime: timestamp as date' as n, 'date' as t, cast('01.02.2023 12:34:45' as timestamp) as val, '"dt": "2023-02-01"' as expected_value from rdb$database union all
-        select 'date: date as date' as n, 'date' as t, cast('01.02.2023' as date) as val, '"dt": "2023-02-01"' as expected_value from rdb$database union all
-        select 'time: timestamp as time' as n, 'time' as t, cast('01.02.2023 12:34:45' as timestamp) as val, '"dt": "12:34:45"' as expected_value from rdb$database union all
-        select 'time: time as time' as n, 'time' as t, cast('12:34:45' as time) as val, '"dt": "12:34:45"' as expected_value from rdb$database
-        into test_name, val_type, val, expected_value
+    for select 'datetime: format 0 (`YYYY-MM-DDThh:mm:ss' as n, 'datetime:0' as t, cast('01.02.2023 12:34:45' as timestamp) as val, null as tzh, null as tzm, '"dt": "2023-02-01T12:34:45"' as expected_value from rdb$database union all
+        select 'datetime: format 1 (`YYYY-MM-DD hh:mm:ss`)' as n, 'datetime:1' as t, cast('01.02.2023 12:34:45' as timestamp) as val, null as tzh, null as tzm, '"dt": "2023-02-01 12:34:45"' as expected_value from rdb$database union all
+        select 'datetime: format 2 with positive tz (`YYYY-MM-DD hh:mm:ss+TZ:TM`)' as n, 'datetime:2' as t, cast('01.02.2023 12:34:45' as timestamp) as val, 3 as tzh, null as tzm, '"dt": "2023-02-01T12:34:45+03:00"' as expected_value from rdb$database union all
+        select 'datetime: format 2 with negative tz (`YYYY-MM-DD hh:mm:ss-TZ:TM`)' as n, 'datetime:2' as t, cast('01.02.2023 12:34:45' as timestamp) as val, -2 as tzh, 30 as tzm, '"dt": "2023-02-01T12:34:45-02:30"' as expected_value from rdb$database union all
+        select 'datetime: format 2 without tz (`YYYY-MM-DD hh:mm:ssZ`)' as n, 'datetime:2' as t, cast('01.02.2023 12:34:45' as timestamp) as val, null as tzh, null as tzm, '"dt": "2023-02-01T12:34:45Z"' as expected_value from rdb$database union all
+        select 'datetime: timestamp as date' as n, 'date' as t, cast('01.02.2023 12:34:45' as timestamp) as val, null as tzh, null as tzm, '"dt": "2023-02-01"' as expected_value from rdb$database union all
+        select 'date: date as date' as n, 'date' as t, cast('01.02.2023' as date) as val, null as tzh, null as tzm, '"dt": "2023-02-01"' as expected_value from rdb$database union all
+        select 'time: timestamp as time' as n, 'time' as t, cast('01.02.2023 12:34:45' as timestamp) as val, null as tzh, null as tzm, '"dt": "12:34:45"' as expected_value from rdb$database union all
+        select 'time: time as time' as n, 'time' as t, cast('12:34:45' as time) as val, null as tzh, null as tzm, '"dt": "12:34:45"' as expected_value from rdb$database
+        into test_name, val_type, val, tzh, tzm, expected_value
     do
     begin
-        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING));
+        resulting_value = (select node from aux_json_node('dt', :val, :val_type, :REQUIRED_AS_NULL, :NO_DELIMITER, :HUMAN_READABLE_FORMATTING, :tzh, :tzm));
         is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
         total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
         suspend;

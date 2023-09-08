@@ -7,6 +7,8 @@ create or alter procedure aux_json_node(
     , required smallint = null -- see comment for parameter
     , add_delimiter smallint = null -- see comment for parameter
     , formatting smallint = null -- see comment for parameter
+    , tz_hour smallint = null
+    , tz_min smallint = null
 )
 returns (
     node blob sub_type text
@@ -135,6 +137,14 @@ begin
                                 || lpad(extract(hour from val_datetime), 2, '0')
                                 || ':' || lpad(extract(minute from val_datetime), 2, '0')
                                 || ':' || lpad(trunc(extract(second from val_datetime)), 2, '0')
+                            || trim(iif(format_str = '2'
+                                        , iif(tz_hour is not null
+                                                , iif(tz_hour > 0, '+', '-')
+                                                    || lpad(abs(tz_hour), 2, '0')
+                                                    || ':'
+                                                    || lpad(coalesce(tz_min, 0), 2, '0')
+                                                , 'Z')
+                                        , ''))
                             , '')
                 || '"';
     end
@@ -199,6 +209,8 @@ comment on parameter aux_json_node.value_type is 'type of value `<type>[:<format
     - for `datetime` available fomats:
         - `0` - `YYYY-MM-DDThh:mm:ss`
         - `1` - `YYYY-MM-DD hh:mm:ss`
+        - `2` - datetime in ISO with timezone from input parameters `tz_hour` and `tz_min`
+        (`YYYY-MM-DD hh:mm:ss+TH:TM` or `YYYY-MM-DD hh:mm:ss-TH:TM` or `YYYY-MM-DD hh:mm:ssZ`)
 ';
 comment on parameter aux_json_node.required is 'requirement of node:
 - 0 - no node (empty string) for null values;

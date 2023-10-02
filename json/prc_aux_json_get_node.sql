@@ -64,7 +64,7 @@ begin
                     value_type = null; val = null; value_name = null;
                     for select name, value_type, val, error_code, error_text
                         from aux_json_parse(:node)
-                        where name = :value_param
+                        where name = :value_param and level = 1
                         into value_name, value_type, val, error_code, error_text
                     do suspend;
                     if (row_count = 0) then suspend;

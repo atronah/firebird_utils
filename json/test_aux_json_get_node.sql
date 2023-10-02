@@ -102,7 +102,33 @@ begin
     suspend;
     -- -- -- --
     -- -- -- --
+    
+    -- -- -- --
+    -- -- -- --
+    test_json = '{
+                        "system": "urn:oid:1.2.643.2.69.1.1.1.6.14",
+                        "value": "7828:213421",
+                        "period": {"start": "2015-05-05"},
+                        "assigner": {
+                            "identifier": {
+                                "system": "urn:oid:1.2.643.5.1.13.13.99.2.206",
+                                "value": "78"
+                            },
+                            "display": "УФМС РФ № 56 Фрунзенского района:345-001"
+                        }
+                    }';
+    test_name = 'nested objects';
+    -- getting only objects with `type = "B"`
+    -- count items|first item|second item
+    expected_value = '1|7828:213421';
+    resulting_value = (select count(*) from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14'))
+                || '|' || coalesce((select val from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14', 'value') ), 'null');
 
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
     test_name = 'ALL TESTS SUMMARY';
     test_json = null;
     expected_value = total_count;

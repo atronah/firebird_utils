@@ -121,8 +121,8 @@ begin
     -- getting only objects with `type = "B"`
     -- count items|first item|second item
     expected_value = '1|7828:213421';
-    resulting_value = (select count(*) from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14'))
-                || '|' || coalesce((select val from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14', 'value') ), 'null');
+    resulting_value = (select count(*) from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14', 'value'))
+                || '|' || coalesce((select max(val) from aux_json_get_node(:test_json, 'system', 'urn:oid:1.2.643.2.69.1.1.1.6.14', 'value') ), 'null');
 
     is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
     total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;

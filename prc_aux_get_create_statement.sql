@@ -57,7 +57,7 @@ begin
     alter_mode = coalesce(alter_mode, 0);
 
     object_type = object_type_in;
-    object_name = upper(trim(object_name_in)); 
+    object_name = upper(trim(object_name_in));
 
     if (object_type is null) then
     begin
@@ -140,6 +140,7 @@ begin
                                                     , 13, 'time'
                                                     , 14, 'char'
                                                     , 16, 'bigint'
+                                                    , 23, 'boolean'
                                                     , 27, 'double precision'
                                                     , 35, 'timestamp'
                                                     , 37, 'varchar'
@@ -294,6 +295,7 @@ begin
                                                         , 13, 'time'
                                                         , 14, 'char'
                                                         , 16, 'bigint'
+                                                        , 23, 'boolean'
                                                         , 27, 'double precision'
                                                         , 35, 'timestamp'
                                                         , 37, 'varchar'
@@ -367,6 +369,7 @@ begin
                                     , 13, 'time'
                                     , 14, 'char'
                                     , 16, 'bigint'
+                                    , 23, 'boolean'
                                     , 27, 'double precision'
                                     , 35, 'timestamp'
                                     , 37, 'varchar'

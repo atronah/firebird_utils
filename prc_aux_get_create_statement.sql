@@ -14,6 +14,8 @@ returns(
     , object_type smallint
     , object_type_name varchar(16)
     , relation_type type of column rdb$relations.rdb$relation_type
+    , error_code bigint
+    , error_text varchar(1024)
 )
 as
 declare field_name varchar(31);
@@ -23,6 +25,7 @@ declare constraint_name varchar(31);
 declare extra_info varchar(255);
 declare is_begin smallint;
 declare repeater smallint;
+declare rdb$field_type type of column rdb$fields.rdb$field_type;
 -- constants
 declare TYPE_TABLE type of column rdb$dependencies.rdb$dependent_type = 0;
 declare TYPE_VIEW type of column rdb$dependencies.rdb$dependent_type = 1;
@@ -47,6 +50,8 @@ declare TABLE_TYPE_GTT_CONNECTION_LVL type of column rdb$relations.rdb$relation_
 declare endl varchar(2) = '
 ';
 begin
+    error_code = 0;
+    error_text = '';
     create_dummy = coalesce(create_dummy, 0);
     add_commit = coalesce(add_commit, 0);
     alter_mode = coalesce(alter_mode, 0);
@@ -278,6 +283,7 @@ begin
             is_begin = 1;
             for select
                     trim(rdb$parameter_name)
+                    , finfo.rdb$field_type
                     , coalesce('type of column ' || trim(p.rdb$relation_name) || '.' || trim(p.rdb$field_name)
                                 , trim(iif(p.rdb$field_source starts with upper('RDB$')
                                             , decode(finfo.rdb$field_type
@@ -307,7 +313,7 @@ begin
                         or (:create_dummy = 1 and (',' || :only_fields || ',') like ('%,' || trim(p.rdb$parameter_name) || ',%')))
                     and rdb$parameter_type = :repeater -- 0 - input param, 1 - output param
                 order by p.rdb$parameter_number
-                into field_name, field_type, field_params
+                into field_name, rdb$field_type, field_type, field_params
             do
             begin
                 stmt = stmt
@@ -316,6 +322,14 @@ begin
                             , '    , ')
                     || field_name || ' ' || field_type || ' ' || field_params || endl;
                 is_begin = 0;
+                if (field_type is null) then
+                begin
+                    error_code = 1;
+                    error_text = 'unsupported field type rdb$field_type=' || coalesce(rdb$field_type, 'null')
+                                    || ' for field ' || coalesce(field_name, 'null');
+                    stmt = null;
+                    suspend; exit;
+                end
             end
             if (row_count > 0) then stmt = stmt || ')';
 

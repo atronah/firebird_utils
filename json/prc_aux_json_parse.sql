@@ -6,6 +6,7 @@ create or alter procedure aux_json_parse(
     , root_name varchar(1024) = null
     , root_node_index bigint = null
 )
+
 returns(
     node_start bigint
     , node_end bigint
@@ -350,7 +351,11 @@ begin
         begin
             val = substring(val from 2 for char_length(val) - 2);
             val = replace(val, trim('\\ '), '<<<aux_json_parse_escaped_backslash>>>');
-            val = replace(val, trim('\ '), '');
+            val = replace(replace(replace(replace(val
+                    , '\t', ascii_char(9))
+                    , '\n', ascii_char(10))
+                    , '\r', ascii_char(13))
+                    , trim('\ '), '');
             val = replace(val, '<<<aux_json_parse_escaped_backslash>>>', trim('\ '));
         end
         node_index = coalesce(root_node_index, 0);

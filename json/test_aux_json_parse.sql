@@ -262,6 +262,18 @@ begin
     -- -- -- --
     -- -- -- --
 
+    -- -- -- --
+    -- -- -- --
+    test_json = '"text_param": "text\twith control characters\r\nlike newline and tab"';
+    test_name = 'test supporting control characters `\t`, `\r`, `\n`';
+    resulting_value = (select value_type || ': ' || val from aux_json_parse(:test_json) where name = 'text_param');
+    expected_value = trim('string: text' || ascii_char(9) || 'with control characters' || ascii_char(13) || ascii_char(10) || 'like newline and tab'); -- expected number 1 because source json contains only one parameter
+    is_ok = iif(resulting_value is not distinct from expected_value, 1, 0); test_result = decode(is_ok, 1, 'PASSED', 'FAILED');
+    total_count = total_count + 1; success_count = success_count + is_ok; summary = success_count || '/' || total_count;
+    suspend;
+    -- -- -- --
+    -- -- -- --
+
     test_name = 'ALL TESTS SUMMARY';
     test_json = null;
     expected_value = total_count;

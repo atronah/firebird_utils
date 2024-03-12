@@ -20,6 +20,7 @@ declare val_length bigint;
 declare format_str varchar(32);
 declare val_datetime timestamp;
 declare val_tmp blob sub_type text;
+declare val_32k varchar(32000);
 declare indent varchar(4) = '    ';
 -- constants
 -- -- aux_json_node.required input parameter
@@ -88,15 +89,17 @@ begin
         if (formatting = HUMAN_READABLE_FORMATTING and val_length < 32000) then
         begin
             val_tmp = '';
+            val_32k = val;
 
-            while (val containing ENDL) do
+            while (val_32k containing ENDL) do
             begin
                 val_tmp = val_tmp
                             || iif(val_tmp > '', indent, '')
-                            || substring(val from 1 for position(:ENDL in val) + char_length(:ENDL) - 1);
-                val = substring(val from position(:ENDL in val) + char_length(:ENDL));
+                            || substring(val_32k from 1 for position(:ENDL in val_32k) + char_length(:ENDL) - 1);
+                val_32k = substring(val_32k from position(:ENDL in val_32k) + char_length(:ENDL));
             end
-            val = val_tmp || iif(val > '', indent, '') || val;
+            val_32k = val_tmp || iif(val_32k > '', indent, '') || val_32k;
+            val = val_32k;
             val_length = char_length(val_32k);
         end
 

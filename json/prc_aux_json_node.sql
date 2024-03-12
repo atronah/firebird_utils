@@ -32,7 +32,6 @@ declare HUMAN_READABLE_FORMATTING smallint = 1;
 declare NO_DELIMITER smallint = 0; -- 0 - without comma after json node
 declare WITH_DELIMITER smallint = 1; -- 0 - witht comma after json node
 -- -- other
-declare SPACE_DUMMY varchar(32) = '<<FBUTILS_JSON_SPACE>>'; -- to substitute it to space after formating and trimming
 declare endl varchar(2) = '
 ';
 begin
@@ -179,12 +178,10 @@ begin
     begin
         node = iif(coalesce(name, '') = ''
                     , ''
-                    , '"' || name || '":' || trim(iif(formatting > NO_FORMATTING, SPACE_DUMMY, '')))
+                    , '"' || name || '":' || iif(formatting > NO_FORMATTING, ' ', trim('')))
             || coalesce(val, 'null')
-            || iif(add_delimiter > 0, ',' || trim(iif(formatting > NO_FORMATTING, SPACE_DUMMY, '')) || endl, '');
+            || iif(add_delimiter > 0, ',' || endl, '');
     end
-
-    node = replace(node, SPACE_DUMMY, ' ');
 
     suspend;
 end^

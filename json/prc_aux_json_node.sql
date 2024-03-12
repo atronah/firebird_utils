@@ -16,6 +16,7 @@ returns (
 
 as
 declare pos bigint;
+declare val_length bigint;
 declare format_str varchar(32);
 declare val_datetime timestamp;
 declare val_tmp blob sub_type text;
@@ -83,7 +84,8 @@ begin
                 and val similar to '[[:WHITESPACE:]]*'
         ) then val = null;
 
-        if (formatting = HUMAN_READABLE_FORMATTING and char_length(val) < 32000) then
+        val_length = char_length(val);
+        if (formatting = HUMAN_READABLE_FORMATTING and val_length < 32000) then
         begin
             val_tmp = '';
 
@@ -95,22 +97,18 @@ begin
                 val = substring(val from position(:ENDL in val) + char_length(:ENDL));
             end
             val = val_tmp || iif(val > '', indent, '') || val;
+            val_length = char_length(val_32k);
         end
-
 
         -- trailing last white spaces and comma (instead of `val = trim(trim(trailing ',' from val));`)
-        pos = char_length(val);
-        while (pos > 0) do
+        pos = val_length;
+        while (substring(val from pos for 1) in (ASCII_CHAR(13), ASCII_CHAR(10), ASCII_CHAR(32), ',')) do
         begin
-            if (substring(val from pos for 1)
-                    in (ASCII_CHAR(13), ASCII_CHAR(10), ASCII_CHAR(32), ',')
-            ) then
-            begin
-                val = left(val, pos - 1) || substring(val from pos + 1);
-                pos = pos - 1;
-            end
-            else break;
+            pos = pos - 1;
         end
+
+        if (pos < val_length)
+            then val = left(val, pos);
 
         val = case value_type
                     when 'obj' then iif(val similar to '[[:WHITESPACE:]]*&{%' escape '&'

@@ -218,7 +218,7 @@ begin
     begin
         select
                 ' for '  || rdb$relation_name || :endl
-                || trim(iif(coalesce(rdb$trigger_inactive, 0) > 1, 'inactive', 'active'))
+                || trim(iif(coalesce(rdb$trigger_inactive, 0) > 0, 'inactive', 'active'))
                 -- from https://github.com/FirebirdSQL/firebird/blob/799bca3ca5f9eb604433addc0f2b7cb3b6c07275/doc/sql.extensions/README.universal_triggers
                 -- // that's how trigger action types are encoded
                 /*

@@ -1,5 +1,5 @@
 create table dbmon_structure_changelog(
-    changes_id bigint
+    change_id bigint
     , db_name varchar(255)
     , object_type varchar(32) -- table, procedure, trigger, view
     , object_name varchar(1024)
@@ -29,12 +29,12 @@ create table dbmon_structure_changelog(
     , auth_method varchar(255)
     , engine_version varchar(32)
 
-    , constraint pk_dbmon_structure_changelog primary key (changes_id)
+    , constraint pk_dbmon_structure_changelog primary key (change_id)
 );
 
 
 comment on table dbmon_structure_changelog is 'Table to store history of changes in database structure';
-comment on column dbmon_structure_changelog.changes_id is 'Identifier of changes (generating automatically by dbmon_structure_changelog_seq in dbmon_structure_changelog_bui)';
+comment on column dbmon_structure_changelog.change_id is 'Identifier of changes (generating automatically by dbmon_structure_changelog_seq in dbmon_structure_changelog_bui)';
 comment on column dbmon_structure_changelog.db_name is 'Name of database';
 comment on column dbmon_structure_changelog.object_type is 'Type of changed database object';
 comment on column dbmon_structure_changelog.object_name is 'Name of changed database object';

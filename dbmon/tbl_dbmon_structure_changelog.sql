@@ -51,7 +51,7 @@ comment on column dbmon_structure_changelog.old_object_name is 'Name of changed 
 comment on column dbmon_structure_changelog.new_object_name is 'Name of changed database object after changes (see `OLD_OBJECT_NAME` of `DDL_TRIGGER` namespace)';
 
 comment on column dbmon_structure_changelog.client_host is 'The wire protocol host name of remote client. Value is returned for all supported protocols';
-comment on column dbmon_structure_changelog.client_os_user is '';
+comment on column dbmon_structure_changelog.client_os_user is 'Name of user in client operation system';
 comment on column dbmon_structure_changelog.client_process is 'Process name of remote client application.';
 comment on column dbmon_structure_changelog.client_user is 'Name of the connected user who made changes';
 comment on column dbmon_structure_changelog.client_role is 'Role of the connected user who made changes';
@@ -70,5 +70,4 @@ create sequence dbmon_structure_changelog_seq;
 
 create desc index idx_dbmon_str_changelog_checked on dbmon_structure_changelog (checked);
 create desc index idx_dbmon_str_changelog_changed on dbmon_structure_changelog (changed);
-create asc index idx_dbmon_str_changelog_name on dbmon_structure_changelog (object_name);
 create asc index idx_dbmon_str_changelog_dtnctc on dbmon_structure_changelog (object_name, object_type, db_name, change_type, changed);

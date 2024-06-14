@@ -7,7 +7,7 @@ begin
     insert into dbmon_structure_changelog
             (object_name
                 , object_type
-                , changes_type
+                , change_type
                 , old_object_name, new_object_name
                 , sql_text)
         values (rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME')
@@ -19,7 +19,7 @@ begin
 
     when any do
     begin
-        insert into dbmon_structure_changelog (changes_type) values ('error');
+        insert into dbmon_structure_changelog (change_type) values ('error');
     end
 end^
 

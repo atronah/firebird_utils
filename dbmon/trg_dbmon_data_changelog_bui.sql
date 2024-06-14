@@ -12,6 +12,8 @@ declare call_stack_object_type type of column mon$call_stack.mon$object_type;
 declare call_stack_timestamp type of column mon$call_stack.mon$timestamp;
 declare call_stack_source_line type of column mon$call_stack.mon$source_line;
 declare call_stack_source_column type of column mon$call_stack.mon$source_column;
+declare context_variable_name type of column mon$context_variables.mon$variable_name;
+declare context_variable_value type of column mon$context_variables.mon$variable_value;
 begin
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_data_changelog_seq);
 
@@ -72,28 +74,60 @@ begin
           into call_stack_call_id, call_stack_object_name, call_stack_object_type, call_stack_timestamp, call_stack_source_line, call_stack_source_column
         do
         begin
-           new.call_stack = new.call_stack
-                        || call_stack_call_id || '(' || call_stack_timestamp || '): '
-                        || upper(decode(call_stack_object_type
-                                        , 0, 'table'
-                                        , 1, 'view'
-                                        , 2, 'trigger'
-                                        , 3, 'computed column'
-                                        , 4, 'constraint'
-                                        , 5, 'procedure'
-                                        , 6, 'index expression'
-                                        , 7, 'exception'
-                                        , 8, 'user'
-                                        , 9, 'domain'
-                                        , 10, 'index'
-                                        , 14, 'sequence'
-                                        , 15, 'udf'
-                                        , 17, 'collation'
-                                        , 'unknown:' || call_stack_object_type))
-                        || ' '
-                        || trim(coalesce(call_stack_object_name, 'null'))
-                        || '[' || coalesce(call_stack_source_line, 'null') || ':' || coalesce(call_stack_source_column, 'null') || ']'
-                        || ascii_char(13) || ascii_char(10);
+           new.call_stack = left(new.call_stack
+                                    || call_stack_call_id || '(' || call_stack_timestamp || '): '
+                                    || upper(decode(call_stack_object_type
+                                                    , 0, 'table'
+                                                    , 1, 'view'
+                                                    , 2, 'trigger'
+                                                    , 3, 'computed column'
+                                                    , 4, 'constraint'
+                                                    , 5, 'procedure'
+                                                    , 6, 'index expression'
+                                                    , 7, 'exception'
+                                                    , 8, 'user'
+                                                    , 9, 'domain'
+                                                    , 10, 'index'
+                                                    , 14, 'sequence'
+                                                    , 15, 'udf'
+                                                    , 17, 'collation'
+                                                    , 'unknown:' || call_stack_object_type))
+                                    || ' '
+                                    || trim(coalesce(call_stack_object_name, 'null'))
+                                    || '[' || coalesce(call_stack_source_line, 'null')
+                                            || ':'
+                                            || coalesce(call_stack_source_column, 'null')
+                                        || ']'
+                                    || ascii_char(13) || ascii_char(10)
+                                , 4096);
+        end
+    end
+
+    if (new.context_variables is null
+        and exists(select *
+                    from dbmon_tracked_field as tf
+                    where tf.table_name = new.table_name
+                        and tf.field_name in (new.changed_field_name, '*', '?')
+                        and coalesce(tf.log_context_variables, 0) > 0)
+    ) then
+    begin
+        new.context_variables = '';
+
+        for select distinct
+              mon$variable_name, mon$variable_value
+          from mon$context_variables
+          where mon$attachment_id = current_connection
+              or mon$transaction_id = rdb$get_context('SYSTEM', 'TRANSACTION_ID')
+          order by 1
+          into context_variable_name, context_variable_value
+        do
+        begin
+           new.context_variables = left(new.context_variables
+                                        || coalesce(context_variable_name, 'null')
+                                        || '='
+                                        || coalesce(context_variable_value, 'null')
+                                        || ascii_char(13) || ascii_char(10)
+                                    , 1024);
         end
     end
 
@@ -113,7 +147,7 @@ begin
             into field_name
         do
         begin
-            new.primary_key_fields = new.primary_key_fields || field_name || ';';
+            new.primary_key_fields = left(new.primary_key_fields || field_name || ';', 1024);
         end
     end
 

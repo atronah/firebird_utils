@@ -15,7 +15,7 @@ declare create_statement type of column dbmon_structure_changelog.sql_text;
 declare checked type of column dbmon_structure_changelog.checked;
 declare changed type of column dbmon_structure_changelog.changed;
 declare get_objects_stmt varchar(1024);
-declare CHANGES_TYPE_BY_CREATE_STMT type of column dbmon_structure_changelog.changes_type = 'AUX_GET_CREATE_STATEMENT';
+declare CHANGE_TYPE_BY_CREATE_STMT type of column dbmon_structure_changelog.change_type = 'AUX_GET_CREATE_STATEMENT';
 begin
     db_name = coalesce(db_connection, rdb$get_context('SYSTEM', 'DB_NAME'));
 
@@ -67,7 +67,7 @@ begin
                 where dsc.db_name is not distinct from :db_name
                     and dsc.object_type is not distinct from :object_type
                     and dsc.object_name is not distinct from :object_name
-                    and dsc.changes_type = :CHANGES_TYPE_BY_CREATE_STMT
+                    and dsc.change_type = :CHANGE_TYPE_BY_CREATE_STMT
                 order by checked desc
                 into prev_create_statement, changed;
 
@@ -77,9 +77,9 @@ begin
             changed = coalesce(:changed, :checked);
 
             update or insert into dbmon_structure_changelog
-                    (db_name, object_type, object_name, changes_type, changed, checked, sql_text)
-                values (:db_name, :object_type, :object_name, :CHANGES_TYPE_BY_CREATE_STMT, :changed, :checked, :create_statement)
-                matching (object_name, object_type, db_name, changes_type, changed);
+                    (db_name, object_type, object_name, change_type, changed, checked, sql_text)
+                values (:db_name, :object_type, :object_name, :CHANGE_TYPE_BY_CREATE_STMT, :changed, :checked, :create_statement)
+                matching (object_name, object_type, db_name, change_type, changed);
         end
     end
 end^

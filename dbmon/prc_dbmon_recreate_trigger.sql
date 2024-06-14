@@ -33,6 +33,7 @@ begin
                 inner join rdb$relation_fields as rf on rf.rdb$relation_name = upper(tf.table_name)
                                                         and (rf.rdb$field_name = upper(tf.field_name)
                                                                 or tf.field_name = '*')
+            where tf.table_name = :table_name
             order by rf.rdb$field_position
             into field_name, extra_cond, field_description
         do

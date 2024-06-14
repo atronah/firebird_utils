@@ -7,7 +7,7 @@ create table dbmon_structure_changelog(
     , checked timestamp
     , changed timestamp
 
-    , changes_type varchar(32)
+    , change_type varchar(32)
 
     , sql_text blob sub_type text
 
@@ -42,7 +42,7 @@ comment on column dbmon_structure_changelog.object_name is 'Name of changed data
 comment on column dbmon_structure_changelog.checked is 'Date and time when changes was checked (for peridicaly checking)';
 comment on column dbmon_structure_changelog.changed is 'Date and time when changes was made';
 
-comment on column dbmon_structure_changelog.changes_type is 'Type of changes (see `EVENT_TYPE` of `DDL_TRIGGER` namespace).
+comment on column dbmon_structure_changelog.change_type is 'Type of changes (see `EVENT_TYPE` of `DDL_TRIGGER` namespace).
 For checks using aux_get_create_statement should be `AUX_GET_CREATE_STATEMENT`';
 
 comment on column dbmon_structure_changelog.sql_text is 'Sql text which makes changes (see `SQL_TEXT` of `DDL_TRIGGER` namespace)';
@@ -71,4 +71,4 @@ create sequence dbmon_structure_changelog_seq;
 create desc index idx_dbmon_str_changelog_checked on dbmon_structure_changelog (checked);
 create desc index idx_dbmon_str_changelog_changed on dbmon_structure_changelog (changed);
 create asc index idx_dbmon_str_changelog_name on dbmon_structure_changelog (object_name);
-create asc index idx_dbmon_str_changelog_dtnctc on dbmon_structure_changelog (object_name, object_type, db_name, changes_type, changed);
+create asc index idx_dbmon_str_changelog_dtnctc on dbmon_structure_changelog (object_name, object_type, db_name, change_type, changed);

@@ -5,7 +5,7 @@ create or alter trigger dbmon_structure_changelog_bui
     on dbmon_structure_changelog
 as
 begin
-    new.changes_id = coalesce(new.changes_id, old.changes_id, next value for dbmon_structure_changelog_seq);
+    new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_structure_changelog_seq);
 
     new.db_name = coalesce(nullif(new.db_name, ''), nullif(old.db_name, ''), rdb$get_context('SYSTEM', 'DB_NAME'));
 
@@ -42,6 +42,10 @@ begin
             from mon$attachments as a
             where a.mon$attachment_id = current_connection
             into new.client_os_user, new.client_version, new.server_pid, new.auth_method;
+    end
+
+    when any do
+    begin
     end
 end^
 

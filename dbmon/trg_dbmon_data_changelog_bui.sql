@@ -13,13 +13,14 @@ declare call_stack_timestamp type of column mon$call_stack.mon$timestamp;
 declare call_stack_source_line type of column mon$call_stack.mon$source_line;
 declare call_stack_source_column type of column mon$call_stack.mon$source_column;
 begin
-    new.changes_id = coalesce(new.changes_id, old.changes_id, next value for dbmon_data_changelog_seq);
+    new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_data_changelog_seq);
 
     new.db_name = coalesce(nullif(new.db_name, ''), nullif(old.db_name, ''), rdb$get_context('SYSTEM', 'DB_NAME'));
 
     new.changed = coalesce(new.changed, old.changed, current_timestamp);
 
     new.table_name = upper(trim(new.table_name));
+    new.changed_field_name = upper(trim(new.changed_field_name));
     new.change_type = upper(coalesce(new.change_type, old.change_type, 'unknown'));
     new.primary_key_fields = coalesce(new.primary_key_fields, old.primary_key_fields);
 
@@ -55,7 +56,7 @@ begin
         and exists(select *
                     from dbmon_tracked_field as tf
                     where tf.table_name = new.table_name
-                        and tf.field_name = (new.field_name, '*')
+                        and tf.field_name in (new.changed_field_name, '*', '?')
                         and coalesce(tf.log_call_stack, 0) > 0)
     ) then
     begin
@@ -100,14 +101,13 @@ begin
     if (nullif(trim(new.primary_key_fields), '') is null) then
     begin
         new.primary_key_fields = '';
-        from rdb$
+
         for select
-                trim(c.rdb$constraint_name) as constraint_name
-                , trim(idxs.rdb$field_name) as field_name
+                trim(idxs.rdb$field_name) as field_name
             from rdb$relation_constraints as c
                 inner join rdb$indices as idx on idx.rdb$index_name = c.rdb$index_name
                 inner join rdb$index_segments as idxs on idxs.rdb$index_name = idx.rdb$index_name
-            where c.rdb$relation_name = :object_name
+            where c.rdb$relation_name = new.table_name
                 and c.rdb$constraint_type containing 'primary key'
             order by idxs.rdb$field_position
             into field_name
@@ -115,6 +115,10 @@ begin
         begin
             new.primary_key_fields = new.primary_key_fields || field_name || ';';
         end
+    end
+
+    when any do
+    begin
     end
 end^
 

@@ -1,11 +1,11 @@
 create table dbmon_data_changelog(
-    changes_id bigint
+    change_id bigint
     , db_name varchar(255)
 
     , table_name varchar(1024)
-    , primary_key_1 varchar(1024)
-    , primary_key_2 varchar(1024)
-    , primary_key_3 varchar(1024)
+    , primary_key_1 varchar(255)
+    , primary_key_2 varchar(255)
+    , primary_key_3 varchar(255)
     , primary_key_fields varchar(1024)
 
     , changed_field_name varchar(32)
@@ -33,12 +33,12 @@ create table dbmon_data_changelog(
 
     , context_variables varchar(1024)
 
-    , constraint pk_dbmon_data_changelog primary key (changes_id)
+    , constraint pk_dbmon_data_changelog primary key (change_id)
 );
 
 
 comment on table dbmon_data_changelog is 'Table to store history of changes of data in monitored tables (specified in dbmon_tracked_field)';
-comment on column dbmon_data_changelog.changes_id is 'Identifier of changes (generating automatically by dbmon_data_changelog_seq in dbmon_date_changelog_bui)';
+comment on column dbmon_data_changelog.change_id is 'Identifier of changes (generating automatically by dbmon_data_changelog_seq in dbmon_date_changelog_bui)';
 
 comment on column dbmon_data_changelog.db_name is 'Name of database';
 comment on column dbmon_data_changelog.table_name is 'Name of table where changes has been detected';

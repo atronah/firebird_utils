@@ -10,6 +10,7 @@ begin
     new.enabled = coalesce(new.enabled, 0);
     new.update_track_triggers = coalesce(new.update_track_triggers, 0);
     new.log_call_stack = coalesce(new.log_call_stack, 0);
+    new.log_context_variables = coalesce(new.log_context_variables, 0);
 end^
 
 set term ; ^

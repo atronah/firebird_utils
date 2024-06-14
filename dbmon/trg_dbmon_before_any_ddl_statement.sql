@@ -19,7 +19,7 @@ begin
 
     when any do
     begin
-        insert into dbmon_structure_changelog (change_type) values ('error');
+        insert into dbmon_structure_changelog (change_id, change_type) values (1, 'error');
     end
 end^
 

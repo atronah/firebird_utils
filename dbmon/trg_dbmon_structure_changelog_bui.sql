@@ -12,6 +12,7 @@ begin
     new.changed = coalesce(new.changed, old.changed, current_timestamp);
     new.checked = coalesce(new.checked, old.checked, current_timestamp);
 
+    new.object_type = upper(new.object_type);
     new.changes_type = upper(coalesce(new.changes_type, old.changes_type, 'unknown'));
 
     new.client_host = coalesce(new.client_host, old.client_host, rdb$get_context('SYSTEM', 'CLIENT_HOST'));

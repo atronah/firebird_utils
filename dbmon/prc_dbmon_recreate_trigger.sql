@@ -5,6 +5,7 @@ create or alter procedure dbmon_recreate_trigger(
 )
 returns (
     table_name type of column dbmon_tracked_field.table_name
+    , trigger_name type of column rdb$triggers.rdb$trigger_name
     , create_trigger_statement tblob
     , primary_keys_block tblob
     , primary_key_fields type of column dbmon_data_changelog.primary_key_fields
@@ -14,6 +15,11 @@ declare field_name type of column dbmon_tracked_field.field_name;
 declare field_description type of column rdb$relation_fields.rdb$description;
 declare extra_cond type of column dbmon_tracked_field.extra_cond;
 declare idx bigint;
+declare available_name_legth bigint;
+declare name_gen_attempt bigint;
+declare TRIGGER_NAME_PREFIX varchar(32) = 'dbmon';
+declare TRIGGER_NAME_SUFFIX varchar(32) = 'auid';
+declare NAME_GEN_ATTEMPT_LIMIT bigint = 99;
 begin
     work_mode = coalesce(work_mode, 0);
 
@@ -24,6 +30,36 @@ begin
         into table_name
     do
     begin
+        TRIGGER_NAME_PREFIX = upper(TRIGGER_NAME_PREFIX);
+        TRIGGER_NAME_SUFFIX = upper(TRIGGER_NAME_SUFFIX);
+        available_name_legth = 31 - char_length(TRIGGER_NAME_PREFIX || TRIGGER_NAME_SUFFIX || '__');
+
+        trigger_name = (select trim(rdb$trigger_name)
+                        from rdb$triggers
+                        where rdb$relation_name = :table_name
+                            and rdb$trigger_name starts with (:TRIGGER_NAME_PREFIX || '_')
+                            and right(trim(rdb$trigger_name), char_length(:TRIGGER_NAME_SUFFIX) + 1) = '_' || :TRIGGER_NAME_SUFFIX);
+        if (trigger_name is null) then
+        begin
+            trigger_name = TRIGGER_NAME_PREFIX
+                            || '_' || left(table_name, available_name_legth)
+                            || '_' || TRIGGER_NAME_SUFFIX;
+            name_gen_attempt = 0;
+            while (exists(select *
+                            from rdb$triggers
+                            where rdb$trigger_name = :trigger_name
+                                and rdb$relation_name is distinct from :table_name)
+                    and name_gen_attempt < NAME_GEN_ATTEMPT_LIMIT)
+            do
+            begin
+                name_gen_attempt = name_gen_attempt + 1;
+                trigger_name = TRIGGER_NAME_PREFIX
+                                || '_' || left(table_name, available_name_legth - char_length(name_gen_attempt) - 1)
+                                || '_' || name_gen_attempt
+                                || '_' || TRIGGER_NAME_SUFFIX;
+            end
+        end
+
         create_trigger_statement = '';
         for select distinct
                 upper(trim(rdb$field_name))
@@ -42,9 +78,7 @@ begin
                     -- ' || field_name || trim(coalesce(' - ' || field_description, '')) || '
                     if (new.' || field_name || ' is distinct from old.' || field_name
                     || iif(extra_cond > '', ' and (' || extra_cond || ')', '')
-                    || ' and exists(select * from dbmon_tracked_field where table_name = '''
-                            || table_name || ''' and field_name in (''' || field_name || ''', ''*'', ''?'') and coalesce(enabled, 0) = 1
-                            and '','' || exclude_roles || '','' not like ''%,'' || current_role || '',%'')'
+                    || ' and '','' || enabled_field_names || '','' like ''%,' || field_name || ',%'''
                     || ') then
                     begin
                         is_unknown_field_mark = 0;
@@ -83,23 +117,38 @@ begin
 
         if (create_trigger_statement > '') then
         begin
-            create_trigger_statement = 'create or alter trigger dbmon_' || left(hash(table_name), 20) || '_auid
+            create_trigger_statement = 'create or alter trigger ' || trigger_name || '
                 active
                 after update or insert or delete
                 on ' || table_name || '
                 as
                 declare is_unknown_field_mark smallint;
-                declare primary_key_fields smallint;
+                declare primary_key_fields type of column dbmon_data_changelog.primary_key_fields;
                 declare table_name type of column dbmon_data_changelog.table_name;
                 declare primary_key_1 type of column dbmon_data_changelog.primary_key_1;
                 declare primary_key_2 type of column dbmon_data_changelog.primary_key_2;
                 declare primary_key_3 type of column dbmon_data_changelog.primary_key_3;
                 declare change_type type of column dbmon_data_changelog.change_type;
+                declare enabled_field_names varchar(16384);
                 begin
-                    if (not exists(select * from dbmon_tracked_field where table_name = '''
-                                    || table_name || ''' and coalesce(enabled, 0) = 1
-                                    and '','' || exclude_roles || '','' not like ''%,'' || current_role || '',%'')
-                    ) then exit;
+                    enabled_field_names = (select list(distinct
+                                                            trim(coalesce(rdb$field_name
+                                                                            , iif(tf.field_name = ''?''
+                                                                                    , tf.field_name
+                                                                                    , null)
+                                                                        )
+                                                                )
+                                                    )
+                                            from dbmon_tracked_field as tf
+                                                left join rdb$relation_fields as rf on rf.rdb$relation_name = tf.table_name
+                                                                                    and (rf.rdb$field_name = upper(tf.field_name)
+                                                                                            or tf.field_name = ''*'')
+                                            where tf.table_name = '''|| table_name || '''
+                                                and coalesce(tf.enabled, 0) = 1
+                                                and '','' || coalesce(tf.exclude_roles, '''') || '','' not like ''%,'' || current_role || '',%''
+                                            );
+                    if (coalesce(enabled_field_names, '''') = '''')
+                        then exit;
 
                     table_name = ''' || table_name || ''';
                     ' || primary_keys_block || '
@@ -115,9 +164,7 @@ begin
                     || create_trigger_statement || '
 
                     if (is_unknown_field_mark > 0
-                            and exists(select * from dbmon_tracked_field where table_name = '''
-                                    || table_name || ''' and coalesce(enabled, 0) = 1
-                                    and field_name in (''?'', ''*''))
+                            and '','' || enabled_field_names || '','' like ''%,?,%''
                     ) then
                     begin
                         insert into dbmon_data_changelog
@@ -128,8 +175,8 @@ begin
                     when any do
                     begin
                         insert into dbmon_data_changelog
-                                (table_name, change_type)
-                        values (:table_name, ''ERROR'');
+                                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type)
+                        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, ''ERROR'');
                     end
                 end
                 ';

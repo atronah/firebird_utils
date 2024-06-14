@@ -13,7 +13,7 @@ begin
     new.checked = coalesce(new.checked, old.checked, current_timestamp);
 
     new.object_type = upper(new.object_type);
-    new.changes_type = upper(coalesce(new.changes_type, old.changes_type, 'unknown'));
+    new.change_type = upper(coalesce(new.change_type, old.change_type, 'unknown'));
 
     new.client_host = coalesce(new.client_host, old.client_host, rdb$get_context('SYSTEM', 'CLIENT_HOST'));
     new.client_process = coalesce(new.client_process, old.client_process, rdb$get_context('SYSTEM', 'CLIENT_PROCESS'));
@@ -26,7 +26,6 @@ begin
     new.isolation_level = coalesce(new.isolation_level, old.isolation_level, rdb$get_context('SYSTEM', 'ISOLATION_LEVEL'));
     new.client_pid = coalesce(new.client_pid, old.client_pid, rdb$get_context('SYSTEM', 'CLIENT_PID'));
     new.engine_version = coalesce(new.engine_version, old.engine_version, rdb$get_context('SYSTEM', 'ENGINE_VERSION'));
-
 
     if (nullif(trim(new.client_os_user), '') is null
             or nullif(trim(new.client_version), '') is null

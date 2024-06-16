@@ -5,7 +5,6 @@ create or alter trigger dbmon_data_changelog_bui
     on dbmon_data_changelog
 as
 declare field_name type of column rdb$index_segments.rdb$field_name;
-declare call_stack tblob;
 declare call_stack_call_id type of column mon$call_stack.mon$call_id;
 declare call_stack_object_name type of column mon$call_stack.mon$object_name;
 declare call_stack_object_type type of column mon$call_stack.mon$object_type;

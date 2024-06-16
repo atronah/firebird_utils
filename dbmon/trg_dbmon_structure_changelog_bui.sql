@@ -34,6 +34,7 @@ begin
     new.auth_method = coalesce(new.auth_method, old.auth_method, rdb$get_context('USER_SESSION', 'DBMON_AUTH_METHOD'));
 
     new.session_id = coalesce(new.session_id, old.session_id, current_connection);
+    new.transaction_id = coalesce(new.transaction_id, old.transaction_id, current_transaction);
     new.isolation_level = coalesce(new.isolation_level, old.isolation_level, rdb$get_context('SYSTEM', 'ISOLATION_LEVEL'));
     new.client_pid = coalesce(new.client_pid, old.client_pid, rdb$get_context('SYSTEM', 'CLIENT_PID'));
     new.engine_version = coalesce(new.engine_version, old.engine_version, rdb$get_context('SYSTEM', 'ENGINE_VERSION'));

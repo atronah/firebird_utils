@@ -42,6 +42,6 @@ set term ; ^
 
 comment on procedure dbmon_drop_triggers is 'Procedure to drop triggers for tracking changes';
 
-comment on parameter dbmon_drop_triggers.table_name_filter is 'Optional filter of name of table which triger should be dropped for.
+comment on parameter dbmon_drop_triggers.table_name_filter is 'Optional table name filter for tables that a /the trigger is to be dropped for.
 If not passed (passed `null`), all triggers with prefix `dbmon_` and `_auid` suffix will be dropped';
 comment on parameter dbmon_drop_triggers.work_mode is 'Work mode: 0 (default) - suspend drop statements to manual execute; 1 - execute drop statements';

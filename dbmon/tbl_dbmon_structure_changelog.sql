@@ -24,6 +24,7 @@ create table dbmon_structure_changelog(
     , client_version varchar(255)
 
     , session_id bigint
+    , transaction_id bigint
     , isolation_level varchar(64)
     , client_pid bigint
     , server_pid bigint
@@ -65,6 +66,7 @@ comment on column dbmon_structure_changelog.client_protocol is 'he protocol used
 comment on column dbmon_structure_changelog.client_version is 'Client library version';
 
 comment on column dbmon_structure_changelog.session_id is 'Connection identifier (mon$attachment_id)';
+comment on column dbmon_structure_changelog.transaction_id is 'Transaction identifier (mon$transaction_id)';
 comment on column dbmon_structure_changelog.isolation_level is 'The isolation level of the current transaction: `READ COMMITTED`, `SNAPSHOT` or `CONSISTENCY`';
 comment on column dbmon_structure_changelog.client_pid is 'Process ID of remote client application';
 comment on column dbmon_structure_changelog.server_pid is 'Server process identifier';

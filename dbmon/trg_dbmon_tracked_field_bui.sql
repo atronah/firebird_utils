@@ -1,5 +1,5 @@
 set term ^ ;
-create or alter trigger dbmon_dbmon_tracked_field_bui
+create or alter trigger dbmon_tracked_field_bui
     active
     before update or insert
     on dbmon_tracked_field

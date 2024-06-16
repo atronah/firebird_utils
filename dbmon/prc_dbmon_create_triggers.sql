@@ -8,10 +8,14 @@ returns (
     , table_name type of column dbmon_tracked_field.table_name
     , trigger_name type of column rdb$triggers.rdb$trigger_name
     , create_trigger_statement tblob
-    , primary_keys_block tblob
+    , primary_keys_block varchar(8000)
     , primary_key_fields type of column dbmon_data_changelog.primary_key_fields
+    , generation_duration_in_ms bigint
 )
 as
+declare stmt_part varchar(32000);
+declare started timestamp;
+declare finished timestamp;
 declare field_name type of column dbmon_tracked_field.field_name;
 declare field_description type of column rdb$relation_fields.rdb$description;
 declare extra_cond type of column dbmon_tracked_field.extra_cond;
@@ -22,6 +26,7 @@ declare TRIGGER_NAME_PREFIX varchar(32) = 'dbmon';
 declare TRIGGER_NAME_SUFFIX varchar(32) = 'auid';
 declare NAME_GEN_ATTEMPT_LIMIT bigint = 99;
 begin
+    table_name_filter = nullif(upper(trim(table_name_filter)), '');
     work_mode = coalesce(work_mode, 0);
     count_of_created_triggers = 0;
 
@@ -32,6 +37,7 @@ begin
         into table_name
     do
     begin
+        started = cast('now' as timestamp);
         TRIGGER_NAME_PREFIX = upper(TRIGGER_NAME_PREFIX);
         TRIGGER_NAME_SUFFIX = upper(TRIGGER_NAME_SUFFIX);
         available_name_legth = 31 - char_length(TRIGGER_NAME_PREFIX || TRIGGER_NAME_SUFFIX || '__');
@@ -63,6 +69,7 @@ begin
         end
 
         create_trigger_statement = '';
+        stmt_part = '';
         for select distinct
                 upper(trim(rdb$field_name))
                 , tf.extra_cond
@@ -76,7 +83,12 @@ begin
             into field_name, extra_cond, field_description
         do
         begin
-            create_trigger_statement = create_trigger_statement || '
+            if (char_length(stmt_part) > 16000) then
+            begin
+                create_trigger_statement = create_trigger_statement || stmt_part;
+                stmt_part = '';
+            end
+            stmt_part = stmt_part || '
                     -- ' || field_name || trim(coalesce(' - ' || field_description, '')) || '
                     if (new.' || field_name || ' is distinct from old.' || field_name
                     || iif(extra_cond > '', ' and (' || extra_cond || ')', '')
@@ -93,6 +105,7 @@ begin
                     end
                 ';
         end
+        create_trigger_statement = create_trigger_statement || stmt_part;
 
         primary_keys_block = '';
         primary_key_fields = '';
@@ -183,6 +196,8 @@ begin
                 end
                 ';
         end
+        finished = cast('now' as timestamp);
+        generation_duration_in_ms = datediff(millisecond from started to finished);
 
         if (work_mode = 0) then
         begin

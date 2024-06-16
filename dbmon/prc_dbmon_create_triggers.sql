@@ -197,8 +197,14 @@ begin
         finished = cast('now' as timestamp);
         generation_duration_in_ms = datediff(millisecond from started to finished);
 
-        if (work_mode = 0)
-            then suspend;
+        if (work_mode = 0) then
+        begin
+            create_trigger_statement = 'set term ^ ;' || ascii_char(13) || ascii_char(10)
+                                        || create_trigger_statement || '^'
+                                        || ascii_char(13) || ascii_char(10)
+                                        || 'set term ; ^';
+            suspend;
+        end
         else if (work_mode = 1)
             then execute statement create_trigger_statement;
     end
@@ -207,7 +213,7 @@ end^
 set term ; ^
 
 
-comment on procedure dbmon_create_triggers is 'Procedure to recreate triggers for tracking changes in fields of table, specified in dbmon_tracked_field';
+comment on procedure dbmon_create_triggers is 'Procedure to (re)create triggers for tracking changes in fields of table, specified in dbmon_tracked_field';
 
-comment on parameter dbmon_create_triggers.table_name_filter is 'Table name to recreate triggers. If null, triggers will be recreated for all tables in dbmon_tracked_field';
-comment on parameter dbmon_create_triggers.work_mode is 'Work mode: 0 (default) - suspend recreating statements to manual execute; 1 - execute recreating statements';
+comment on parameter dbmon_create_triggers.table_name_filter is 'Optional filter of name of table which trigger should be (re)created for. If not passed (passed `null`) triggers will be (re)created for all tables from dbmon_tracked_field';
+comment on parameter dbmon_create_triggers.work_mode is 'Work mode: 0 (default) - suspend (re)create statements to manual execute; 1 - execute (re)create statements';

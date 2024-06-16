@@ -12,7 +12,7 @@ create table dbmon_tracked_field(
 
 comment on table dbmon_tracked_field is 'Fields of tables to track changes data in it.
 After changes you should re-create tracking triggers for table using
-`execute procedure dbmon_recreate_trigger[(:table_name)]`
+`execute procedure dbmon_create_triggers[(:table_name)]`
 (or pass value `1` to field update_track_triggers)';
 
 comment on column dbmon_tracked_field.table_name is 'Name of table to track data changing in specified field';
@@ -23,6 +23,6 @@ Special values:
 comment on column dbmon_tracked_field.extra_cond is 'Extra cond with using fields of `new` and `old` record, to reduce record of tracking';
 comment on column dbmon_tracked_field.exclude_roles is 'Database roles separated by comma for whom tracking is disabled';
 comment on column dbmon_tracked_field.enabled is 'Enables tracking if is not `null`/`0`';
-comment on column dbmon_tracked_field.update_track_triggers is 'If passed 1, triggers for table will be recreated by dbmon_recreate_trigger';
+comment on column dbmon_tracked_field.update_track_triggers is 'If passed 1, triggers for table will be recreated by dbmon_create_triggers';
 comment on column dbmon_tracked_field.log_call_stack is 'If passed 1, call stack will be added to logged data of changes';
 comment on column dbmon_tracked_field.log_context_variables is 'If passed 1, context variables will be added to logged data of changes';

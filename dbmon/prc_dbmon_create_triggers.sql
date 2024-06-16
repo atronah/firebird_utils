@@ -1,5 +1,5 @@
 set term ^ ;
-create or alter procedure dbmon_recreate_trigger(
+create or alter procedure dbmon_create_triggers(
     table_name_filter type of column dbmon_tracked_field.table_name = null
     , work_mode smallint = null
 )
@@ -207,7 +207,7 @@ end^
 set term ; ^
 
 
-comment on procedure dbmon_recreate_trigger is 'Procedure to recreate triggers for tracking changes in fields of table, specified in dbmon_tracked_field';
+comment on procedure dbmon_create_triggers is 'Procedure to recreate triggers for tracking changes in fields of table, specified in dbmon_tracked_field';
 
-comment on parameter dbmon_recreate_trigger.table_name_filter is 'Table name to recreate triggers. If null, triggers will be recreated for all tables in dbmon_tracked_field';
-comment on parameter dbmon_recreate_trigger.work_mode is 'Work mode: 0 (default) - suspend recreating statements to manual execute; 1 - execute recreating statements';
+comment on parameter dbmon_create_triggers.table_name_filter is 'Table name to recreate triggers. If null, triggers will be recreated for all tables in dbmon_tracked_field';
+comment on parameter dbmon_create_triggers.work_mode is 'Work mode: 0 (default) - suspend recreating statements to manual execute; 1 - execute recreating statements';

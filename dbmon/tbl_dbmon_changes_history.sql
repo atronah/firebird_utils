@@ -10,3 +10,6 @@ create table dbmon_changes_history(
 
 create desc index idx_dbmon_changes_history on dbmon_changes_history (checked);
 create asc index idx_dbmon_changes_history_name on dbmon_changes_history (obj_name);
+
+comment on table dbmon_changes_history is 'History of metadata changes (changes in create statements of database objects).
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

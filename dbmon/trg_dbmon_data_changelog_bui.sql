@@ -6,6 +6,7 @@ create or alter trigger dbmon_data_changelog_bui
 as
 declare field_name type of column rdb$index_segments.rdb$field_name;
 declare call_stack_call_id type of column mon$call_stack.mon$call_id;
+declare call_stack_caller_id type of column mon$call_stack.mon$caller_id;
 declare call_stack_object_name type of column mon$call_stack.mon$object_name;
 declare call_stack_object_type type of column mon$call_stack.mon$object_type;
 declare call_stack_timestamp type of column mon$call_stack.mon$timestamp;
@@ -65,13 +66,17 @@ begin
         new.call_stack = '';
 
         for select
-              cs.mon$call_id, cs.mon$object_name, cs.mon$object_type, cs.mon$timestamp, cs.mon$source_line, cs.mon$source_column
+                cs.mon$call_id, cs.mon$caller_id
+                , cs.mon$object_name, cs.mon$object_type, cs.mon$timestamp
+                , cs.mon$source_line, cs.mon$source_column
           from mon$statements as s
               inner join mon$call_stack as cs using(mon$statement_id)
           where s.mon$attachment_id = current_connection
               or s.mon$transaction_id = rdb$get_context('SYSTEM', 'TRANSACTION_ID')
           order by mon$call_id asc
-          into call_stack_call_id, call_stack_object_name, call_stack_object_type, call_stack_timestamp, call_stack_source_line, call_stack_source_column
+          into call_stack_call_id, call_stack_caller_id
+                , call_stack_object_name, call_stack_object_type, call_stack_timestamp
+                , call_stack_source_line, call_stack_source_column
         do
         begin
            new.call_stack = left(new.call_stack
@@ -98,6 +103,7 @@ begin
                                             || ':'
                                             || coalesce(call_stack_source_column, 'null')
                                         || ']'
+                                    || ' called by ' || coalesce(call_stack_caller_id, 'null')
                                     || ascii_char(13) || ascii_char(10)
                                 , 4096);
         end

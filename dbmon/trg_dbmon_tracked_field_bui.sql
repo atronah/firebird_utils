@@ -14,3 +14,6 @@ begin
 end^
 
 set term ; ^
+
+comment on trigger dbmon_tracked_field_bui is 'Trigger to calculate default values for some columns if they have not been passed.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

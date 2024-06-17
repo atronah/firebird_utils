@@ -29,11 +29,14 @@ create table dbmon_structure_changelog(
     , auth_method varchar(255)
     , engine_version varchar(32)
 
+    , context_variables varchar(4096)
+
     , constraint pk_dbmon_structure_changelog primary key (change_id)
 );
 
 
-comment on table dbmon_structure_changelog is 'Table to store history of changes in database structure';
+comment on table dbmon_structure_changelog is 'Table to store history of changes in database structure.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';
 comment on column dbmon_structure_changelog.change_id is 'Identifier of changes (generating automatically by dbmon_structure_changelog_seq in dbmon_structure_changelog_bui)';
 comment on column dbmon_structure_changelog.db_name is 'Name of database';
 comment on column dbmon_structure_changelog.object_type is 'Type of changed database object';
@@ -65,6 +68,7 @@ comment on column dbmon_structure_changelog.server_pid is 'Server process identi
 comment on column dbmon_structure_changelog.auth_method is 'Name of authentication plugin used to connect';
 comment on column dbmon_structure_changelog.engine_version is 'The Firebird engine (server) version';
 
+comment on column dbmon_data_changelog.context_variables is 'Values of context variables from MON$CONTEXT_VARIABLES for current transaction and current session';
 
 create sequence dbmon_structure_changelog_seq;
 

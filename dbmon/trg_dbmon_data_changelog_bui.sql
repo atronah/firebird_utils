@@ -126,7 +126,7 @@ begin
                                         || '='
                                         || coalesce(context_variable_value, 'null')
                                         || ascii_char(13) || ascii_char(10)
-                                    , 1024);
+                                    , 4096);
         end
     end
 
@@ -156,3 +156,6 @@ begin
 end^
 
 set term ; ^
+
+comment on trigger dbmon_data_changelog_bui is 'Trigger to calculate default values for some columns if they have not been passed.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

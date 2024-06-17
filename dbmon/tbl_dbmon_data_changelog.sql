@@ -31,13 +31,14 @@ create table dbmon_data_changelog(
     , auth_method varchar(255)
     , engine_version varchar(32)
 
-    , context_variables varchar(1024)
+    , context_variables varchar(4096)
 
     , constraint pk_dbmon_data_changelog primary key (change_id)
 );
 
 
-comment on table dbmon_data_changelog is 'Table to store history of changes of data in monitored tables (specified in dbmon_tracked_field)';
+comment on table dbmon_data_changelog is 'Table to store history of changes of data in monitored tables (specified in dbmon_tracked_field).
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';
 comment on column dbmon_data_changelog.change_id is 'Identifier of changes (generating automatically by dbmon_data_changelog_seq in dbmon_date_changelog_bui)';
 
 comment on column dbmon_data_changelog.db_name is 'Name of database';
@@ -69,6 +70,8 @@ comment on column dbmon_data_changelog.client_pid is 'Process ID of remote clien
 comment on column dbmon_data_changelog.server_pid is 'Server process identifier';
 comment on column dbmon_data_changelog.auth_method is 'Name of authentication plugin used to connect';
 comment on column dbmon_data_changelog.engine_version is 'The Firebird engine (server) version';
+
+comment on column dbmon_data_changelog.context_variables is 'Values of context variables from MON$CONTEXT_VARIABLES for current transaction and current session';
 
 create sequence dbmon_data_changelog_seq;
 

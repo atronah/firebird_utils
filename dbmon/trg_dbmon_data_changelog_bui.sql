@@ -71,7 +71,7 @@ begin
           from mon$statements as s
               inner join mon$call_stack as cs using(mon$statement_id)
           where s.mon$attachment_id = current_connection
-              and s.mon$transaction_id = rdb$get_context('SYSTEM', 'TRANSACTION_ID')
+              or s.mon$transaction_id = rdb$get_context('SYSTEM', 'TRANSACTION_ID')
           order by mon$call_id asc
           into call_stack_call_id, call_stack_caller_id
                 , call_stack_object_name, call_stack_object_type, call_stack_timestamp

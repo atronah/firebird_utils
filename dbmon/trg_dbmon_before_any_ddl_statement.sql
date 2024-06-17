@@ -24,3 +24,6 @@ begin
 end^
 
 set term ; ^
+
+comment on trigger dbmon_before_any_ddl_statement is 'DDL-trigger to track changes in database structure.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

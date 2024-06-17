@@ -4,7 +4,8 @@ create or alter procedure dbmon_create_triggers(
     , work_mode smallint = null
 )
 returns (
-    table_name type of column dbmon_tracked_field.table_name
+    count_of_created_triggers bigint
+    , table_name type of column dbmon_tracked_field.table_name
     , trigger_name type of column rdb$triggers.rdb$trigger_name
     , create_trigger_statement tblob
     , primary_keys_block varchar(8000)
@@ -27,6 +28,7 @@ declare NAME_GEN_ATTEMPT_LIMIT bigint = 99;
 begin
     table_name_filter = nullif(upper(trim(table_name_filter)), '');
     work_mode = coalesce(work_mode, 0);
+    count_of_created_triggers = 0;
 
     for select distinct
             upper(trim(tf.table_name))
@@ -207,6 +209,16 @@ begin
         end
         else if (work_mode = 1)
             then execute statement create_trigger_statement;
+    end
+
+    if (work_mode = 0) then
+    begin
+        table_name = null;
+        trigger_name = null;
+        create_trigger_statement = null;
+        primary_keys_block = null;
+        primary_key_fields = null;
+        suspend;
     end
 end^
 

@@ -13,7 +13,8 @@ create table dbmon_tracked_field(
 comment on table dbmon_tracked_field is 'Fields of tables to track changes data in it.
 After changes you should re-create tracking triggers for table using
 `execute procedure dbmon_create_triggers[(:table_name)]`
-(or pass value `1` to field update_track_triggers)';
+(or pass value `1` to field update_track_triggers).
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';
 
 comment on column dbmon_tracked_field.table_name is 'Name of table to track data changing in specified field';
 comment on column dbmon_tracked_field.field_name is 'Name of column of table to track data changing in it.

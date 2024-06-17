@@ -4,6 +4,8 @@ create or alter trigger dbmon_structure_changelog_bui
     before update or insert
     on dbmon_structure_changelog
 as
+declare context_variable_name type of column mon$context_variables.mon$variable_name;
+declare context_variable_value type of column mon$context_variables.mon$variable_value;
 begin
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_structure_changelog_seq);
 
@@ -44,9 +46,34 @@ begin
             into new.client_os_user, new.client_version, new.server_pid, new.auth_method;
     end
 
+    if (new.context_variables is null) then
+    begin
+        new.context_variables = '';
+
+        for select distinct
+              mon$variable_name, mon$variable_value
+          from mon$context_variables
+          where mon$attachment_id = current_connection
+              or mon$transaction_id = rdb$get_context('SYSTEM', 'TRANSACTION_ID')
+          order by 1
+          into context_variable_name, context_variable_value
+        do
+        begin
+           new.context_variables = left(new.context_variables
+                                        || coalesce(context_variable_name, 'null')
+                                        || '='
+                                        || coalesce(context_variable_value, 'null')
+                                        || ascii_char(13) || ascii_char(10)
+                                    , 4096);
+        end
+    end
+
     when any do
     begin
     end
 end^
 
 set term ; ^
+
+comment on trigger dbmon_structure_changelog_bui is 'Trigger to calculate default values for some columns if they have not been passed.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

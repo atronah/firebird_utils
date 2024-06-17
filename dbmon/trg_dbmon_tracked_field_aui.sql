@@ -17,3 +17,6 @@ begin
 end^
 
 set term ; ^
+
+comment on trigger dbmon_tracked_field_aui is 'Trigger to process `update_track_triggers` flag in dbmon_tracked_field.
+See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

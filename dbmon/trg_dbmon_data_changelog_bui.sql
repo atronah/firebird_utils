@@ -15,12 +15,12 @@ declare call_stack_source_column type of column mon$call_stack.mon$source_column
 declare context_variable_name type of column mon$context_variables.mon$variable_name;
 declare context_variable_value type of column mon$context_variables.mon$variable_value;
 
-declare log_attachement_client_os_user type of column dbmon_settings.val;
-declare log_attachement_client_version type of column dbmon_settings.val;
-declare log_attachement_server_pid type of column dbmon_settings.val;
-declare log_attachement_auth_method type of column dbmon_settings.val;
+declare log_attachement_client_os_user smallint;
+declare log_attachement_client_version smallint;
+declare log_attachement_server_pid smallint;
+declare log_attachement_auth_method smallint;
+declare log_call_stack smallint;
 declare log_context_variables type of column dbmon_settings.val;
-declare log_call_stack type of column dbmon_settings.val;
 begin
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_data_changelog_seq);
 
@@ -48,10 +48,10 @@ begin
     new.client_pid = coalesce(new.client_pid, old.client_pid, rdb$get_context('SYSTEM', 'CLIENT_PID'));
     new.engine_version = coalesce(new.engine_version, old.engine_version, rdb$get_context('SYSTEM', 'ENGINE_VERSION'));
 
-    log_attachement_client_os_user = (select val from dbmon_settings where key = 'log_attachement_client_os_user');
-    log_attachement_client_version = (select val from dbmon_settings where key = 'log_attachement_client_version');
-    log_attachement_server_pid = (select val from dbmon_settings where key = 'log_attachement_server_pid');
-    log_attachement_auth_method = (select val from dbmon_settings where key = 'log_attachement_auth_method');
+    log_attachement_client_os_user = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_client_os_user');
+    log_attachement_client_version = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_client_version');
+    log_attachement_server_pid = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_server_pid');
+    log_attachement_auth_method = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_auth_method');
     if (nullif(trim(new.client_os_user), '') is null and log_attachement_client_os_user > 0
             or nullif(trim(new.client_version), '') is null and log_attachement_client_version > 0
             or nullif(trim(new.server_pid), '') is null and log_attachement_server_pid > 0
@@ -75,7 +75,7 @@ begin
             then rdb$set_context('USER_SESSION', 'DBMON_AUTH_METHOD', new.auth_method);
     end
 
-    log_call_stack = (select val from dbmon_settings where key = 'log_call_stack');
+    log_call_stack = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_call_stack');
     if (new.call_stack is null
         and (log_call_stack > 0
                 or exists(select *

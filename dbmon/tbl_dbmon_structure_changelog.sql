@@ -8,6 +8,7 @@ create table dbmon_structure_changelog(
     , changed timestamp
 
     , change_type varchar(32)
+    , change_comment varchar(4096)
 
     , sql_text blob sub_type text
 
@@ -32,6 +33,7 @@ create table dbmon_structure_changelog(
 
     , context_variables varchar(4096)
 
+
     , constraint pk_dbmon_structure_changelog primary key (change_id)
 );
 
@@ -48,6 +50,7 @@ comment on column dbmon_structure_changelog.changed is 'Date and time when chang
 
 comment on column dbmon_structure_changelog.change_type is 'Type of changes (see `EVENT_TYPE` of `DDL_TRIGGER` namespace).
 For checks using aux_get_create_statement should be `AUX_GET_CREATE_STATEMENT`';
+comment on column dbmon_structure_changelog.change_comment is 'Comment for change from author (to history reason)';
 
 comment on column dbmon_structure_changelog.sql_text is 'Sql text which makes changes (see `SQL_TEXT` of `DDL_TRIGGER` namespace)';
 

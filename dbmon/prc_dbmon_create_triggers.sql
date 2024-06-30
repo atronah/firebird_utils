@@ -227,6 +227,6 @@ set term ; ^
 
 comment on procedure dbmon_create_triggers is 'Procedure to (re)create triggers for tracking changes in fields of table, specified in dbmon_tracked_field';
 
-comment on parameter dbmon_create_triggers.table_name_filter is 'Optional table name filter for tables that a /the trigger is to be (re)created for.
+comment on parameter dbmon_create_triggers.table_name_filter is 'Optional table name filter for tables that the triggers is to be (re)created for.
 If not passed (passed `null`), triggers will be (re)created for all tables from dbmon_tracked_field';
 comment on parameter dbmon_create_triggers.work_mode is 'Work mode: 0 (default) - suspend (re)create statements to manual execute; 1 - execute (re)create statements';

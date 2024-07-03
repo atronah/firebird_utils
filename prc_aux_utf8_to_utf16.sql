@@ -19,6 +19,10 @@ declare extra_block_count smallint;
 declare data_mask bigint;
 declare data_buffer varchar(32000);
 declare data_buffer_len bigint;
+
+declare source_chunk_pos bigint;
+declare source_chunk_data varchar(4096);
+declare SOURCE_CHUNK_SIZE bigint = 4096;
 -- Constants
 declare BUFFER_LIMIT bigint = 16000;
 -- -- block prefixes
@@ -51,11 +55,20 @@ begin
 
         data_buffer_len = 0;
         extra_block_count = 0;
-        pos = 1;
 
-        while (pos <= utf8_data_len and error_code = 0) do
+
+        source_chunk_pos = 1;
+        source_chunk_data = substring(utf8_data from source_chunk_pos for SOURCE_CHUNK_SIZE);
+        pos = 1;
+        while ((source_chunk_pos + pos - 1) <= utf8_data_len and error_code = 0) do
         begin
-            utf8_block_char = substring(utf8_data from pos for 1);
+            if (pos > SOURCE_CHUNK_SIZE) then
+            begin
+                source_chunk_pos = source_chunk_pos + SOURCE_CHUNK_SIZE;
+                source_chunk_data = substring(utf8_data from source_chunk_pos for SOURCE_CHUNK_SIZE);
+                pos = 1;
+            end
+            utf8_block_char = substring(source_chunk_data from pos for 1);
             utf8_block_char_int = ascii_val(utf8_block_char);
 
             if (extra_block_count = 0) then

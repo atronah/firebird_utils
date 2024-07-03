@@ -23,7 +23,7 @@ merge into dbmon_settings as cur
                 , 'Semicolon separated list of context variables (in format `<NAME_SPACE>.<VARIABLE_NAME>`) which should be logged into field `context_variables`  of tables `dbmon_structure_changelog` and `dbmon_data_changelog.`' as d
             from rdb$database
             union
-            select 'log_call_stack' as k, '' as v
+            select 'log_call_stack' as k, 0 as v
                 , 'Enables saving info from `mon$call_stack` to `call_stack` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog.`' as d
             from rdb$database
         )

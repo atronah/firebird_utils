@@ -15,7 +15,7 @@ declare create_statement type of column dbmon_structure_changelog.sql_text;
 declare checked type of column dbmon_structure_changelog.checked;
 declare changed type of column dbmon_structure_changelog.changed;
 declare get_objects_stmt varchar(1024);
-declare CHANGE_TYPE_BY_CREATE_STMT type of column dbmon_structure_changelog.change_type = 'AUX_GET_CREATE_STATEMENT';
+declare CHANGE_TYPE_BY_CREATE_STMT type of column dbmon_structure_changelog.change_type = 'DBMON_CHECK_FOR_CHANGES';
 begin
     db_name = coalesce(db_connection, rdb$get_context('SYSTEM', 'DB_NAME'));
 

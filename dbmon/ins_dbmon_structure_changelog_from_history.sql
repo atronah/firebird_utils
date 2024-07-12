@@ -1,11 +1,16 @@
-insert into dbmon_structure_changelog (db_name, object_type, object_name, changed, checked, change_type, sql_text)
+insert into dbmon_structure_changelog
+        (db_name
+            , object_type, object_name
+            , changed, checked, change_type
+            , sql_text
+            )
     select
             db as db_name
             , obj_type as object_type
             , obj_name as object_name
             , changed
             , checked
-            , 'AUX_GET_CREATE_STATEMENT' as change_type
+            , 'DBMON_CHECK_FOR_CHANGES' as change_type
             , create_statement as sql_text
         from dbmon_changes_history as old_table
     where not exists (select *
@@ -15,3 +20,4 @@ insert into dbmon_structure_changelog (db_name, object_type, object_name, change
                                 and new_table.db_name is not distinct from coalesce(nullif(old_table.db, ''), rdb$get_context('SYSTEM', 'DB_NAME'))
                                 and new_table.change_type is not distinct from 'AUX_GET_CREATE_STATEMENT'
                                 and new_table.changed is not distinct from old_table.changed)
+    order by old_table.checked asc

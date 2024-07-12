@@ -185,7 +185,7 @@ begin
             into field_name
         do
         begin
-            new.primary_key_fields = left(new.primary_key_fields || field_name || ';', 1024);
+            new.primary_key_fields = left(trim(new.primary_key_fields || field_name) || ';', 1024);
         end
     end
 

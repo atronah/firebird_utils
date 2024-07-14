@@ -14,6 +14,8 @@ declare context_variable_value type of column mon$context_variables.mon$variable
 begin
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_structure_changelog_seq);
 
+    new.old_object_name = coalesce(new.old_object_name, old.old_object_name); -- prevent erasing old_object_name
+
     new.db_name = coalesce(nullif(new.db_name, ''), nullif(old.db_name, ''), rdb$get_context('SYSTEM', 'DB_NAME'));
 
     new.changed = coalesce(new.changed, old.changed, current_timestamp);

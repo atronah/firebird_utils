@@ -23,6 +23,7 @@ declare log_call_stack smallint;
 declare log_context_variables type of column dbmon_settings.val;
 begin
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_data_changelog_seq);
+    new.old_value = coalesce(new.old_value, old.old_value); -- prevent erasing old value
 
     new.db_name = coalesce(nullif(new.db_name, ''), nullif(old.db_name, ''), rdb$get_context('SYSTEM', 'DB_NAME'));
 

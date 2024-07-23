@@ -18,6 +18,6 @@ insert into dbmon_structure_changelog
                         where new_table.object_name is not distinct from old_table.obj_name
                                 and new_table.object_type is not distinct from upper(old_table.obj_type)
                                 and new_table.db_name is not distinct from coalesce(nullif(old_table.db, ''), rdb$get_context('SYSTEM', 'DB_NAME'))
-                                and new_table.change_type is not distinct from 'AUX_GET_CREATE_STATEMENT'
+                                and new_table.change_type is not distinct from 'DBMON_CHECK_FOR_CHANGES'
                                 and new_table.changed is not distinct from old_table.changed)
     order by old_table.checked asc

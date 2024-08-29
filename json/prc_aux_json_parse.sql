@@ -25,10 +25,12 @@ returns(
 )
 as
 declare state smallint;
+declare is_escaped_symbol smallint;
+declare string_value blob sub_type text;
+declare string_value_buffer varchar(255);
+declare string_value_buffer_len smallint = 255;
 declare pos bigint;
 declare c varchar(1);
-declare prev_c varchar(1);
-declare prev_prev_c varchar(1);
 declare child_node_index bigint;
 declare root_node_start bigint;
 declare root_node_end bigint;
@@ -99,7 +101,6 @@ begin
     root_value_end = null;
     root_node_index = coalesce(root_node_index, 0);
     root_value_type = null;
-    root_name = coalesce(root_name, '');
     root_val = '';
     temp_root_val = '';
 
@@ -111,9 +112,9 @@ begin
         pos = pos + 1;
         c = substring(json from pos for 1);
 
-        if (c in (SPACE, HRZ_TAB, NEW_LINE, CARR_RET)) then
+        if (c in (SPACE, HRZ_TAB, NEW_LINE, CARR_RET) and state is distinct from IN_STRING) then
         begin
-            if (state in (NO_STATE, AFTER_STRING, IN_OBJECT, IN_ARRAY, IN_STRING)) then
+            if (state in (NO_STATE, AFTER_STRING, IN_OBJECT, IN_ARRAY)) then
             begin
                 -- do nothing, skip
             end
@@ -129,7 +130,13 @@ begin
             begin
                 if (c = '{') then state = IN_OBJECT;
                 else if (c = '[') then state = IN_ARRAY;
-                else if (c = '"') then state = IN_STRING;
+                else if (c = '"') then
+                begin
+                    state = IN_STRING;
+                    string_value = '';
+                    string_value_buffer = '';
+                    is_escaped_symbol = 0;
+                end
                 else if (c = '-' and substring(json from pos + 1 for 1) in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
                             or c in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
                     ) then
@@ -241,28 +248,43 @@ begin
             end
             else if (state = IN_STRING) then
             begin
-                if (c = '"' and
-                        -- skip escaped quotes inside string `\"`
-                        -- but do not skip end quote just after escaped backslash `\\"`
-                        (prev_c is distinct from trim('\ ')
-                            or prev_prev_c is not distinct from trim('\ ')) -- except
-                ) then
+                if (c = trim('\ ') and is_escaped_symbol = 0) then
+                begin
+                    is_escaped_symbol = 1;
+                end
+                else if (c = '"' and is_escaped_symbol = 0) then
                 begin
                     state = AFTER_STRING;
                     root_node_end = pos;
                     root_value_end = pos;
                 end
-                -- todo: add support escaped symbols including `\"`
                 else
                 begin
                     root_value_start = coalesce(root_value_start, pos);
+
+                    if (is_escaped_symbol > 0) then
+                    begin
+                        if (c = 't') then c = HRZ_TAB; -- tab
+                        if (c = 'n') then c = NEW_LINE; -- new line
+                        if (c = 'r') then c = CARR_RET; -- carriage return
+                    end
+
+                    if (char_length(string_value_buffer) >= string_value_buffer_len) then
+                    begin
+                        string_value = string_value || string_value_buffer;
+                        string_value_buffer = '';
+                    end
+                    string_value_buffer = string_value_buffer || c;
+
+                    is_escaped_symbol = 0;
                 end
             end
             else if (state = AFTER_STRING) then
             begin
                 if (c = ':') then
                 begin
-                    root_name = substring(json from root_value_start + 1 for root_value_end - root_value_start - 1);
+                    root_name = string_value || string_value_buffer;
+                    string_value = ''; string_value_buffer = '';
                     root_value_start = null; root_value_end = null;
                     for select
                             node_start, node_end, value_start, value_end, node_path, node_index, value_type, name, val, error_code, error_text, level
@@ -280,14 +302,14 @@ begin
                             root_value_start = node_start;
                             root_value_end = node_end;
                             root_value_type = value_type;
+                            if (value_type = STR)
+                                then string_value = val;
                         end
                         else suspend;
                     end
                     state = FINISH; root_node_end = pos;
                 end
-                else if (root_name is not null
-                            and c in ('"', '{', '[', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-')
-                    ) then error_code = COMMA_MISSED_ERROR;
+                else if (c in ('"', '{', '[', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-')) then error_code = COMMA_MISSED_ERROR;
                 else if (c in (',', ']', '}')) then
                 begin
                     state = FINISH;
@@ -314,8 +336,6 @@ begin
                 else error_code = UNEXPECTED_SYMBOL_IN_NUMBER_ERR;
             end
         end
-        prev_prev_c = prev_c;
-        prev_c = c;
     end
 
     if (error_code <> NO_ERROR) then
@@ -344,20 +364,12 @@ begin
         value_end = coalesce(root_value_end, node_end);
         value_type = root_value_type;
         level = 0;
-        name = nullif(root_name, '');
+        name = root_name;
         node_path = '/';
-        val = substring(json from value_start for value_end - value_start + 1);
-        if (value_type = STR) then
-        begin
-            val = substring(val from 2 for char_length(val) - 2);
-            val = replace(val, trim('\\ '), '<<<aux_json_parse_escaped_backslash>>>');
-            val = replace(replace(replace(replace(val
-                    , '\t', ascii_char(9))
-                    , '\n', ascii_char(10))
-                    , '\r', ascii_char(13))
-                    , trim('\ '), '');
-            val = replace(val, '<<<aux_json_parse_escaped_backslash>>>', trim('\ '));
-        end
+        val = iif(value_type = STR
+                    , string_value || string_value_buffer
+                    , substring(json from value_start for value_end - value_start + 1)
+                );
         node_index = coalesce(root_node_index, 0);
         suspend;
     end

@@ -12,8 +12,8 @@ create table dbmon_data_changelog(
     , changed timestamp
     , change_type varchar(32)
     , change_comment varchar(4096)
-    , old_value varchar(4096)
-    , new_value varchar(4096)
+    , old_value varchar(16000)
+    , new_value varchar(16000)
 
     , call_stack varchar(4096)
 
@@ -54,8 +54,8 @@ comment on column dbmon_data_changelog.changed_field_name is 'Name of column whe
 comment on column dbmon_data_changelog.changed is 'Date and time when changes was made';
 comment on column dbmon_data_changelog.change_type is 'Type of statement, which is initiated changes: `INSERT`, `UPDATE` or `DELETE`';
 comment on column dbmon_data_changelog.change_comment is 'Comment for change from author (to history reason)';
-comment on column dbmon_data_changelog.old_value is 'First 4096 symbols of old value (before changes)';
-comment on column dbmon_data_changelog.new_value is 'First 4096 symbols of new value (before changes)';
+comment on column dbmon_data_changelog.old_value is 'First 16000 symbols of old value (before changes)';
+comment on column dbmon_data_changelog.new_value is 'First 16000 symbols of new value (before changes)';
 
 comment on column dbmon_data_changelog.call_stack is 'Call stack from MON$CALL_STACK for all statements of current session (attachment)';
 

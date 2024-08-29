@@ -101,7 +101,7 @@ begin
                                 , change_type, changed_field_name, old_value, new_value)
                         values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields
                                 , :change_type, ''' || field_name || '''
-                                , left(old.' || field_name || ', 4096), left(new.' || field_name || ', 4096));
+                                , left(old.' || field_name || ', 16000), left(new.' || field_name || ', 16000));
                     end
                 ';
         end

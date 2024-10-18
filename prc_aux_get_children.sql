@@ -28,8 +28,8 @@ create or alter procedure aux_get_children(
     , id_field varchar(64) -- name of table field, wherein the item identifier is stored
     , parent_field varchar(64) -- name of table field, wherein the parent item identifier is stored
     , current_id varchar(64) = null -- current item identifier, for which children are searched (if null - childrean are searched for each element of table)
-    , only_leaf smallint = 0 -- 0 - returns all results, 1 - returns only leaf items (without children)
-    , base_level smallint = 0 -- number of base level which is considered relatively child level number
+    , only_leaf smallint = null -- null/0 - returns all results, 1 - returns only leaf items (without children)
+    , base_level smallint = null -- number of base level which is considered relatively child level number
     , sort_expression varchar(255) = null
     , extra_cond varchar(1024) = null
 )
@@ -38,11 +38,13 @@ returns (
     , parent_id varchar(64) -- parent item identified
     , child_level smallint -- child level number
     , sort_order bigint
+    , stmt blob sub_type text
+    , has_child smallint
 )
 as
-declare stmt blob sub_type text;
-declare has_child smallint;
 begin
+    only_leaf = coalesce(only_leaf, 0);
+    base_level = coalesce(base_level, 0);
     sort_order = 0;
 
     child_level = base_level;

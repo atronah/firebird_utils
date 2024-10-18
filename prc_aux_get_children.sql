@@ -46,8 +46,11 @@ begin
     sort_order = 0;
 
     child_level = base_level;
-    parent_field = coalesce(parent_field, 0);
-    current_id = coalesce(current_id, 0);
+    parent_field = coalesce(parent_field, '');
+    current_id = coalesce(current_id, '');
+
+    if (current_id = '')
+        then exit;
 
     stmt = 'select
                 ' || :id_field || ' as id,

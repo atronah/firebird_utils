@@ -54,6 +54,7 @@ begin
                 ' || :parent_field || ' as parent_id
             from ' || :table_name || '
             where ' || parent_field || ' = :current_id
+                    and ' || :id_field || ' is distinct from :current_id
             ' || iif(coalesce(extra_cond, '') > '', 'and (' || replace(extra_cond, '''', '''''') || ')', '') || '
             ' || iif(coalesce(sort_expression, '') > '', 'order by ' || replace(sort_expression, '''', ''''''), '')
             ;

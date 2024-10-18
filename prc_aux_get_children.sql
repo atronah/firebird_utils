@@ -1,5 +1,27 @@
 set term ^ ;
 
+-- creating surrogate procedure to prevent errors about parameter mismatch
+-- in case when db contains old version of procedure with other number of params
+create or alter procedure aux_get_children(
+    table_name varchar(64)
+    , id_field varchar(64)
+    , parent_field varchar(64)
+    , current_id varchar(64) = null
+    , only_leaf smallint = 0
+    , base_level smallint = 0
+    , sort_expression varchar(255) = null
+    , extra_cond varchar(1024) = null
+) returns(
+    id varchar(64)
+    , parent_id varchar(64)
+    , child_level smallint
+    , sort_order bigint
+)
+as
+begin
+    if (1 = 0) then suspend;
+end^
+
 -- Returns all child items of specified item with current_id (or each item of table)
 create or alter procedure aux_get_children(
     table_name varchar(64) -- name of table in which the items are searched
@@ -9,6 +31,7 @@ create or alter procedure aux_get_children(
     , only_leaf smallint = 0 -- 0 - returns all results, 1 - returns only leaf items (without children)
     , base_level smallint = 0 -- number of base level which is considered relatively child level number
     , sort_expression varchar(255) = null
+    , extra_cond varchar(1024) = null
 )
 returns (
     id varchar(64) -- item identified
@@ -30,8 +53,10 @@ begin
                 ' || :id_field || ' as id,
                 ' || :parent_field || ' as parent_id
             from ' || :table_name || '
-            ' || iif(coalesce(sort_expression, '') > '', 'order by ' || sort_expression, '');
             where ' || parent_field || ' = :current_id
+            ' || iif(coalesce(extra_cond, '') > '', 'and (' || replace(extra_cond, '''', '''''') || ')', '') || '
+            ' || iif(coalesce(sort_expression, '') > '', 'order by ' || replace(sort_expression, '''', ''''''), '')
+            ;
 
 
     for execute statement (stmt)(current_id := :current_id)
@@ -53,7 +78,8 @@ begin
                                     , :id
                                     , :only_leaf
                                     , :base_level + 1
-                                    , :sort_expression)
+                                    , :sort_expression
+                                    , :extra_cond)
             into :id, :parent_id, :child_level do
             begin
                 has_child = 1;

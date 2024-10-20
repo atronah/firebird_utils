@@ -26,6 +26,12 @@ merge into dbmon_settings as cur
             select 'log_call_stack' as k, 0 as v
                 , 'Enables saving info from `mon$call_stack` to `call_stack` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
             from rdb$database
+            union
+            select 'log_prev_unified_create_statement' as k, 0 as v
+                , 'Enables computing create statement for previous version ob database object (before update)'
+                || ' using procedure `aux_get_create_statement`'
+                || ' and saving result into `prev_unified_create_statement` field of `dbmon_structure_changelog`' as d
+            from rdb$database
         )
     ) as upd
     on cur.key = upd.key

@@ -33,6 +33,7 @@ create table dbmon_structure_changelog(
 
     , context_variables varchar(4096)
 
+    , prev_unified_create_statement blob sub_type text
 
     , constraint pk_dbmon_structure_changelog primary key (change_id)
 );
@@ -74,6 +75,8 @@ comment on column dbmon_structure_changelog.auth_method is 'Name of authenticati
 comment on column dbmon_structure_changelog.engine_version is 'The Firebird engine (server) version';
 
 comment on column dbmon_structure_changelog.context_variables is 'Values of context variables from MON$CONTEXT_VARIABLES for current transaction and current session';
+
+comment on column dbmon_structure_changelog.prev_unified_create_statement is 'Create statement for previous version ob database object (before update) computed by procedure `aux_get_create_statement`';
 
 create sequence dbmon_structure_changelog_seq;
 

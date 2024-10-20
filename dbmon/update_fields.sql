@@ -1,0 +1,1 @@
+alter table dbmon_structure_changelog add prev_unified_create_statement blob sub_type text;

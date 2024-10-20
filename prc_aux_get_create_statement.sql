@@ -2,7 +2,7 @@ set term ^ ;
 
 create or alter procedure aux_get_create_statement(
     object_name_in varchar(31)
-    , object_type_in smallint = null -- has the same values as RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE
+    , object_type_in varchar(32) = null -- has the same values as RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE
     , only_fields varchar(8192) = null -- if is null - add all fields, otherwise add only specified fields
     , create_dummy smallint = null -- 0 (default) - to create db-object "as is"; 1 - to create dummy version (for table: all fields as varchar; for procedures: without in/out params and body; for triggers: without body); 2 - the same as 1, but to create procedures with all in/out params
     , add_commit smallint = null -- 0 (default) - do not add `commit`; 1 - add `commit` after statement;
@@ -12,7 +12,7 @@ returns(
     stmt blob sub_type text
     , object_name varchar(31)
     , object_type smallint
-    , object_type_name varchar(16)
+    , object_type_name varchar(32)
     , relation_type type of column rdb$relations.rdb$relation_type
     , error_code bigint
     , error_text varchar(1024)
@@ -56,43 +56,59 @@ begin
     add_commit = coalesce(add_commit, 0);
     alter_mode = coalesce(alter_mode, 0);
 
-    object_type = object_type_in;
+
     object_name = upper(trim(object_name_in));
+    object_type = iif(object_type_in similar to '[0-9]+'
+                        , object_type_in
+                        , case upper(trim(object_type_in))
+                                -- when 'INDEX' then TYPE_INDEX
+                                when 'PROCEDURE' then TYPE_PROCEDURE
+                                when 'SEQUENCE' then TYPE_SEQUENCE
+                                when 'TABLE' then TYPE_TABLE
+                                when 'TRIGGER' then TYPE_TRIGGER
+                                when 'VIEW' then TYPE_VIEW
+                                when 'EXCEPTION' then TYPE_EXCEPTION
+                                when 'DOMAIN' then TYPE_DOMAIN
+                                when 'SEQUENCE' then TYPE_SEQUENCE
+                                -- when 'USER' then TYPE_USER
+                                else null
+                            end
+                        );
 
     if (object_type is null) then
     begin
-        object_type = case
-            when exists(select rdb$trigger_name
-                    from rdb$triggers
-                    where rdb$trigger_name = :object_name)
-                then TYPE_TRIGGER
-            when exists(select rdb$procedure_name
-                    from rdb$procedures
-                    where rdb$package_name is null
-                        and rdb$procedure_name = :object_name)
-                then TYPE_PROCEDURE
-            when exists(select RDB$FIELD_NAME
-                    from RDB$FIELDS
-                    where RDB$FIELD_NAME = :object_name)
-                then TYPE_DOMAIN
-            when exists(select rdb$exception_name
-                    from rdb$exceptions
-                    where rdb$exception_name = :object_name)
-                then TYPE_EXCEPTION
-            when exists(select rdb$generator_name
-                    from rdb$generators
-                    where rdb$generator_name = :object_name)
-                then TYPE_SEQUENCE
-            else (select decode(rdb$relation_type
-                                , 1, :TYPE_VIEW
-                                , :TYPE_TABLE)
-                    from rdb$relations
-                    where rdb$relation_name = :object_name
-                        and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TABLE_TYPE_SYS_OR_USER
-                                                                            , :TABLE_TYPE_VIEW
-                                                                            , :TABLE_TYPE_GTT_TRANSACTION_LVL
-                                                                            , :TABLE_TYPE_GTT_CONNECTION_LVL))
-            end;
+        object_type = (with types as (
+                        select :TYPE_TRIGGER as object_type
+                        from rdb$triggers
+                        where rdb$trigger_name = :object_name
+                        union
+                        select :TYPE_PROCEDURE as object_type
+                        from rdb$procedures
+                        where rdb$procedure_name = :object_name
+                        union
+                        select :TYPE_EXCEPTION as object_type
+                        from rdb$exceptions
+                        where rdb$exception_name = :object_name
+                        union
+                        select :TYPE_SEQUENCE as object_type
+                        from rdb$generators
+                        where rdb$generator_name = :object_name
+                        union
+                        select :TYPE_DOMAIN as object_type
+                        from RDB$FIELDS
+                        where RDB$FIELD_NAME = :object_name
+                        union
+                        select iif(rdb$relation_type = 1, :TYPE_VIEW, :TYPE_TABLE) as object_type
+                        from rdb$relations
+                        where rdb$relation_name = :object_name
+                            and coalesce(rdb$relation_type, :TYPE_TABLE) in (:TABLE_TYPE_SYS_OR_USER
+                                                                                , :TABLE_TYPE_VIEW
+                                                                                , :TABLE_TYPE_GTT_TRANSACTION_LVL
+                                                                                , :TABLE_TYPE_GTT_CONNECTION_LVL)
+                    )
+                    select max(object_type)
+                    from types
+                    having count(*) = 1);
     end
 
     if (object_type is null) then exit;

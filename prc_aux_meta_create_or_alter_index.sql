@@ -12,6 +12,7 @@ as
 declare create_stmt blob sub_type text;
 declare index_fields_list varchar(4096);
 declare is_computed smallint;
+declare segment_count type of column rdb$indices.rdb$segment_count;
 
 declare is_exists_same_name smallint;
 
@@ -22,7 +23,6 @@ declare current_table_name type of column rdb$indices.rdb$relation_name;
 declare current_unique type of column rdb$indices.rdb$unique_flag;
 declare current_descending type of column rdb$indices.rdb$index_type;
 declare current_expression type of column rdb$indices.rdb$expression_source;
-declare current_segment_count type of column rdb$indices.rdb$segment_count;
 
 declare other_index_name type of column rdb$indices.rdb$index_name;
 declare other_field_position type of column rdb$index_segments.rdb$field_position;
@@ -39,6 +39,7 @@ begin
     -- (if fields list changes by content or order)
     is_computed = 0;
     index_fields_list = null;
+    segment_count = 0;
     for select
             rf.rdb$field_name as field_name
         from aux_split_text(:index_expression, ',') as p
@@ -53,10 +54,12 @@ begin
         if (field_name is null) then
         begin
             is_computed = 1;
+            segment_count = 0;
             index_fields_list = null;
             break;
         end
         index_fields_list = trim(coalesce(index_fields_list || ',', '')) ||  trim(upper(field_name));
+        segment_count = segment_count + 1;
     end
 
     create_stmt = 'create'
@@ -75,14 +78,13 @@ begin
             , ind.rdb$unique_flag as current_unique
             , coalesce(ind.rdb$index_type, 0) as current_descending
             , ind.rdb$expression_source as current_expression
-            , ind.rdb$segment_count as current_segment_count
             , seg.rdb$field_name as field_name
         from rdb$indices as ind
             left join rdb$index_segments as seg using(rdb$index_name)
         where ind.rdb$index_name = upper(:index_name)
             and coalesce(ind.rdb$system_flag, 0) = 0
         order by seg.rdb$field_position
-        into current_table_name, current_unique, current_descending, current_expression, current_segment_count, field_name
+        into current_table_name, current_unique, current_descending, current_expression, field_name
     do
     begin
         is_exists_same_name = 1;
@@ -118,7 +120,7 @@ begin
     begin
         if (coalesce(other_unique, 0) = coalesce(index_unique, 0)
             and coalesce(other_descending, 0) = coalesce(index_descending, 0)
-            and coalesce(other_segment_count, 0) = coalesce(current_segment_count, 0)
+            and coalesce(other_segment_count, 0) = coalesce(segment_count, 0)
         ) then
         begin
             -- compare fields list with adding index if expression is different

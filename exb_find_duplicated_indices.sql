@@ -32,6 +32,9 @@ declare d_field_name type of column rdb$index_segments.rdb$field_name;
 declare d_field_position type of column rdb$index_segments.rdb$field_position;
 declare d_field_statistics type of column rdb$index_segments.rdb$statistics;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     index_name_filter = null; -- optional filter to reduce list of processing indices (used as `like`-expression)
 
     -- lookup through all NON-system indices

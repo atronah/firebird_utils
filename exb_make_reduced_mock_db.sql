@@ -4,6 +4,9 @@ declare name varchar(31);
 declare relation_name varchar(31);
 declare stmt blob sub_type text;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     -- Заменяет все процедуры на ничего не делающие заглушки
     for select 'create or alter procedure '
             || trim(procs.rdb$procedure_name)

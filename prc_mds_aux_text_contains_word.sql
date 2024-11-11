@@ -19,6 +19,9 @@ declare BEGIN_WITH_WORD_PATTERN varchar(255);
 declare END_WITH_WORD_PATTERN varchar(255);
 declare WORD_IN_THE_MIDDLE_PATTERN varchar(255);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     text = text_in;
     does_contain = 0;
 

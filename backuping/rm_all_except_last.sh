@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# author: atronah (look for me by this nickname on GitHub and GitLab)
+# source: https://github.com/atronah/firebird_utils
+
 pushd "$1"
 
 # check and removes old files which match specified name and extension pattern starting from N-file (i.e. keeps last (N-1) files)

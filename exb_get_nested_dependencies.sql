@@ -18,6 +18,9 @@ declare new_procedures blob sub_type text;
 declare type_name varchar(31);
 declare name_prefix varchar(31);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     name_prefix = 'MDS_';
 
     select coalesce(list('''' || trim(rdb$relation_name) || '''' || ascii_char(13) || ascii_char(10)), 'null')

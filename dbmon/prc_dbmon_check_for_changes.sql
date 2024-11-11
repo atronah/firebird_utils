@@ -19,6 +19,9 @@ declare checked type of column dbmon_structure_changelog.checked;
 declare get_objects_stmt varchar(1024);
 declare CHANGE_TYPE_BY_CREATE_STMT type of column dbmon_structure_changelog.change_type = 'DBMON_CHECK_FOR_CHANGES';
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     db_name = coalesce(db_connection, rdb$get_context('SYSTEM', 'DB_NAME'));
 
     for select

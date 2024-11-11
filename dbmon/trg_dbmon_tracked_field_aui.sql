@@ -6,6 +6,9 @@ create or alter trigger dbmon_tracked_field_aui
 as
 declare count_of_created_triggers bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     if (new.update_track_triggers = 1) then
     begin
         count_of_created_triggers = (select count_of_created_triggers

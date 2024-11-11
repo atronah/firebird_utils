@@ -17,10 +17,13 @@ returns(
 as
 declare next_parent_id bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     parent_level = 0;
     extra_cond = coalesce(extra_cond, '');
-    
-    
+
+
     while (start_parent_id is not null and parent_level < depth_limit) do
     begin
         parent_level = parent_level + 1;

@@ -20,6 +20,9 @@ as
 declare idx smallint;
 declare digit smallint; -- число из четных цифр номера в обратном порядке
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     error_code = 0;
     error_text = '';
     is_correct = True;

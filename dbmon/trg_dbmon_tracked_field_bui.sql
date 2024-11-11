@@ -5,6 +5,9 @@ create or alter trigger dbmon_tracked_field_bui
     on dbmon_tracked_field
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     new.table_name = upper(trim(new.table_name));
     new.field_name = upper(trim(new.field_name));
     new.enabled = coalesce(new.enabled, 0);

@@ -38,7 +38,10 @@ declare FIRST_THREE_BITS_MASK smallint = 224; -- 1110 0000 (to check xxx. .... f
 declare FIRST_FOUR_BITS_MASK smallint = 240; -- 1111 0000 (to check xxxx .... for 24 bit coding)
 declare FIRST_FIVE_BITS_MASK smallint = 248; -- 1111 1000 (to check xxxx x.... for 32 bit coding)
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
     -- based on description from https://habr.com/ru/post/544084/
+
     error_code = 0;
     error_text = '';
     data_buffer = '';

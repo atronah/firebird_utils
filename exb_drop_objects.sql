@@ -7,6 +7,9 @@ returns (
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     for select
             'trigger' as type_name, rdb$trigger_name as name
         from rdb$triggers

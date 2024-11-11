@@ -7,8 +7,11 @@ declare dependent_name varchar(31);
 declare drop_names blob sub_type text;
 declare pos bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     name = upper(name);
-    
+
     drop_names = name;
     while (drop_names <> '') do
     begin

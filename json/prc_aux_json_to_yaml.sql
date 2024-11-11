@@ -27,6 +27,9 @@ declare BASE_INDENT varchar(64) = '                                             
 declare ENDL varchar(2) = '
 ';
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     parent_value_type = null;
     parent_type_stack = null;
     is_object_in_array = 0;

@@ -23,6 +23,9 @@ as
 declare text_len bigint;
 declare pos bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     text_len = minvalue(char_length(string1), char_length(string2));
     pos = 1;
     while (pos <= text_len) do

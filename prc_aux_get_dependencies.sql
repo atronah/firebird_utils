@@ -29,6 +29,9 @@ declare TYPE_COLUMN type of column rdb$dependencies.rdb$dependent_type = 9;
 declare TYPE_SEQUENCE type of column rdb$dependencies.rdb$dependent_type = 14;
 declare TYPE_DOMAIN type of column rdb$dependencies.rdb$dependent_type = -1;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     max_depth = coalesce(max_depth, 100);
     objects_to_exclude_regex = coalesce(objects_to_exclude_regex, '');
 

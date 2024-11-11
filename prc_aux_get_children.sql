@@ -43,6 +43,9 @@ returns (
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     only_leaf = coalesce(only_leaf, 0);
     base_level = coalesce(base_level, 0);
     sort_order = 0;

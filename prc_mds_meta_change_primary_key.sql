@@ -14,6 +14,9 @@ declare existed_fields_list varchar(1024);
 declare field_name varchar(31);
 declare fb_engine_ver varchar(128);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     table_name = trim(table_name);
     constraint_name = trim(coalesce(constraint_name, left('pk_' || table_name, 31)));
     select list(part) from aux_split_text(:fields_list, ',', 1) into fields_list;

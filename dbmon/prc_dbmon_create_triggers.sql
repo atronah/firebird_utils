@@ -26,6 +26,9 @@ declare TRIGGER_NAME_PREFIX varchar(32) = 'dbmon';
 declare TRIGGER_NAME_SUFFIX varchar(32) = 'auid';
 declare NAME_GEN_ATTEMPT_LIMIT bigint = 99;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     table_name_filter = nullif(upper(trim(table_name_filter)), '');
     work_mode = coalesce(work_mode, 0);
     count_of_created_triggers = 0;

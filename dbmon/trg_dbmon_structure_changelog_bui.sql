@@ -12,6 +12,9 @@ declare log_context_variables type of column dbmon_settings.val;
 declare context_variable_name type of column mon$context_variables.mon$variable_name;
 declare context_variable_value type of column mon$context_variables.mon$variable_value;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     new.change_id = coalesce(new.change_id, old.change_id, next value for dbmon_structure_changelog_seq);
 
     new.old_object_name = coalesce(new.old_object_name, old.old_object_name); -- prevent erasing old_object_name

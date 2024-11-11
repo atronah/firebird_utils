@@ -9,6 +9,9 @@ returns (
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     if(coalesce(:text, '') = '' ) then exit;
     for select
             trim(rdb$field_name) as fname

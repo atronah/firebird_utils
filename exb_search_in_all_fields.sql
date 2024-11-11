@@ -10,6 +10,9 @@ declare search_field_type_list varchar(1024);
 declare search_data varchar(64);
 declare table_name_regex varchar(1024);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     -- https://www.firebirdsql.org/file/documentation/html/en/refdocs/fblangref25/firebird-25-language-reference.html
     -- 7 - SMALLINT
     -- 8 - INTEGER

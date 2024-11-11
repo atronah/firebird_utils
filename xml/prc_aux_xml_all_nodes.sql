@@ -58,6 +58,9 @@ declare NESTED_LIMIT smallint = 100;
 declare ENDL varchar(2) = '
 ';
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     -- create exception ERROR 'ERROR';
 
     root_path = coalesce(trim(root_path), '');

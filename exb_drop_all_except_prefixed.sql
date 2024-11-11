@@ -10,6 +10,9 @@ returns(
 as
 declare name_prefix varchar(31);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     name_prefix = 'MDS_';
 
     for select

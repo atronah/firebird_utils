@@ -9,6 +9,9 @@ declare table_name varchar(31);
 declare ROWS_LIMIT bigint;
 declare EXCLUDE_TABLE_NAMES varchar(4096);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     skip_data = '';
 
     ROWS_LIMIT = 10000;

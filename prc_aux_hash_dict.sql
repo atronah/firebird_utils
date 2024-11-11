@@ -17,6 +17,9 @@ returns(
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     existed_dict = coalesce(existed_dict, '');
     ITEMS_DELIMITER = trim(coalesce(ITEMS_DELIMITER, ','));
     KEY_VALUE_DELIMITER = trim(coalesce(KEY_VALUE_DELIMITER, ':'));

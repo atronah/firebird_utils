@@ -32,8 +32,11 @@ declare c_type smallint;
 declare prev_c_type smallint;
 declare part_number bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     if (str is null) then exit;
-    
+
     abbr = '';
     str = trim(str);
     pos = 1;

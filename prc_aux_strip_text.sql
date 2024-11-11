@@ -21,6 +21,9 @@ declare REMOVE_GIVEN_SYMBOLS smallint = 0; -- 0 - removes from source text (`sou
 declare REMOVE_ALL_EXCEPT_GIVEN_SYMBOLS smallint = 1; -- 1 - removes from source text (`source_text`) all symbols EXCEPT specified in `symbols_list`
 declare REMOVE_REPEAT_OF_GIVEN_SYMBOLS smallint = 2; -- 2 - removes from source text (`source_text`) the second and subsequent repetitions of symbol from `symbols_list`
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     affected_symbols = 0;
 
     if (coalesce(source_text, '') > '') then

@@ -15,6 +15,9 @@ declare text_len bigint;
 declare delimiter_len bigint;
 declare part_begin bigint;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     if (coalesce(text, '') = '' or char_length(coalesce(delimiter, '')) = 0) then
     begin
         idx = 1;

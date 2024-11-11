@@ -79,6 +79,9 @@ declare COMMA_MISSED_ERROR bigint = 7;
 -- root_node_start
 -- root_node_end
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     SPACE = ASCII_CHAR(32);
     HRZ_TAB = ASCII_CHAR(9);
     NEW_LINE = ASCII_CHAR(10);

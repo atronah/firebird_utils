@@ -37,6 +37,9 @@ declare REQUIRED_AS_EMPTY bigint = 2; -- 2 - empty node with empty value (for `o
 declare NO_DELIMITER smallint = 0; -- 0 - without comma after json node
 declare WITH_DELIMITER smallint = 1; -- 0 - witht comma after json node
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     total_count = 0;
     success_count = 0;
 

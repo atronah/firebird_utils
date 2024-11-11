@@ -26,6 +26,9 @@ declare pos bigint;
 declare endpos bigint;
 declare dot varchar(1024);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     startpos = null;
     pos = 1;
     endpos = 1;

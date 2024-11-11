@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+# author: atronah (look for me by this nickname on GitHub and GitLab)
+# source: https://github.com/atronah/firebird_utils
+
 scriptpath="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 verbose=false

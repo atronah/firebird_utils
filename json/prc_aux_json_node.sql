@@ -37,6 +37,9 @@ declare WITH_DELIMITER smallint = 1; -- 0 - witht comma after json node
 declare endl varchar(2) = '
 ';
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     -- WARNING:
     -- if your database has WIN1251 encofing, you should create this procedure in that database only in WIN1251 connection
     -- (I mean, use `isql -ch win1251 your_database -i prc_aux_json_node.sql`)

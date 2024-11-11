@@ -30,6 +30,9 @@ declare key_node_level bigint;
 declare prefix varchar(255);
 declare suffix varchar(255);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     for select
             node_path, node_start, node_end, level
             , error_code, error_text

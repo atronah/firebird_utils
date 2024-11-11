@@ -5,6 +5,9 @@ create or alter trigger dbmon_before_any_ddl_statement
 as
 declare prev_unified_create_statement type of column dbmon_structure_changelog.prev_unified_create_statement;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
+
     if ((select val from dbmon_settings where key = 'log_prev_unified_create_statement') > 0) then
     begin
         if (exists(select rdb$procedure_name

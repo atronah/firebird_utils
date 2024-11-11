@@ -22,6 +22,9 @@ declare point_pos bigint;
 declare value_end_symbol varchar(1);
 declare nested_blocks_stack varchar(1024);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     node_name = trim(node_name);
 
     pos_offset = 1;

@@ -8,6 +8,9 @@ returns (
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     text = source;
     text = replace(text, 'Рђ', 'А');
     text = replace(text, 'Р‘', 'Б');

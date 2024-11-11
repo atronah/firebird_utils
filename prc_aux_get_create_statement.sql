@@ -50,6 +50,9 @@ declare TABLE_TYPE_GTT_CONNECTION_LVL type of column rdb$relations.rdb$relation_
 declare endl varchar(2) = '
 ';
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     error_code = 0;
     error_text = '';
     create_dummy = coalesce(create_dummy, 0);

@@ -22,6 +22,9 @@ declare STATE_FIRSTNAME smallint = 3;
 declare STATE_BEFORE_MIDNAME smallint = 4;
 declare STATE_MIDNAME smallint = 5;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     use_case_to_split = coalesce(use_case_to_split, 0);
 
     pos = 1;

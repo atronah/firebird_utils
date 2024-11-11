@@ -10,6 +10,9 @@ create or alter procedure aux_assert_equal(
 as
 declare error_message varchar(4096);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     if (left_value is distinct from right_value
             or char_length(left_value) is distinct from char_length(right_value))
         then exception AUX_ASSERT_EXCEPTION  coalesce(message_prefix, '')

@@ -24,6 +24,9 @@ returns (
 as
 declare time_temp_val varchar(128);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     error_code = 0;
     error_text = '';
 

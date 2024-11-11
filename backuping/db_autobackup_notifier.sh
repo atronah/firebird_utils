@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# author: atronah (look for me by this nickname on GitHub and GitLab)
+# source: https://github.com/atronah/firebird_utils
+
 bot_token="abcdf"
 chat_id="-1234567890"
 message_prefix="ERROR[ONKO]:"

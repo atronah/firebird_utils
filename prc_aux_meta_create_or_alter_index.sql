@@ -32,6 +32,9 @@ declare other_expression type of column rdb$indices.rdb$expression_source;
 declare other_segment_count type of column rdb$indices.rdb$segment_count;
 declare other_fields_list varchar(4096);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     force_create = coalesce(force_create, 0);
 
     -- check existing of all fields from index expression

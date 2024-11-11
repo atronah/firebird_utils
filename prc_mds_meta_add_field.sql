@@ -10,6 +10,9 @@ create or alter procedure mds_meta_add_field(
 )
 as
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     table_name = trim(table_name);
     field_name = trim(field_name);
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# author: atronah (look for me by this nickname on GitHub and GitLab)
+# source: https://github.com/atronah/firebird_utils
+
 gbak_util=/opt/firebird/bin/gbak
 db_user=SYSDBA
 db_pas=masterkey

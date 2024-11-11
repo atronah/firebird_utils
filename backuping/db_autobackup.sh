@@ -1,5 +1,6 @@
 #! /bin/sh
 
+# author: atronah (look for me by this nickname on GitHub and GitLab)
 # source: https://github.com/atronah/firebird_utils
 
 fb_gbak="/opt/firebird/bin/gbak"

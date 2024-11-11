@@ -23,6 +23,9 @@ declare NO_LOOP smallint = 0;
 declare LOOP_DIRECTLY smallint = 1;
 declare LOOP_THROUGH_OTHER smallint = 2;
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     if (coalesce(sub_call, 0) > 0) then
     begin
         create_order = 0;

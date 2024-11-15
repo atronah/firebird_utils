@@ -91,6 +91,11 @@ begin
                 create_trigger_statement = create_trigger_statement || stmt_part;
                 stmt_part = '';
             end
+
+            field_description = replace(field_description, ascii_char(10), '&#10;');
+            field_description = replace(field_description, ascii_char(13), '&#13;');
+            field_description = left(field_description, 255);
+
             stmt_part = stmt_part || '
                     -- ' || field_name || trim(coalesce(' - ' || field_description, '')) || '
                     if (new.' || field_name || ' is distinct from old.' || field_name

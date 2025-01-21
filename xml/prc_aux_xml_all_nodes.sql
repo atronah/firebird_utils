@@ -90,16 +90,16 @@ begin
         -- returns `<my_node>` for `  <my_node></my_node>`
         -- returns `<my_node />` for `  <my_node /><a></a>`
         open_tag = (select match
-                        from mds_aux_regexp_search(:otp
+                        from aux_regexp_search(:otp
                                                 , substring(:xml from :startpos
                                                                  for maxvalue(position('>', :xml, :startpos) - :startpos + 1, 0))
-                                                    , 1));
+                                                , 1));
         if(open_tag is not null) then
         begin
             endpos = startpos + char_length(open_tag) - 1; -- position of `>` for open tag
             -- returns `ns:name` for `<ns:name a="x">`
-            fullname = (select substring(match from 2) from mds_aux_regexp_search('<' || :aliased_name_pattern, :open_tag, 1));
-            attributes = (select trim(match) from mds_aux_regexp_search(:attribute_list_pattern, :open_tag, 1));
+            fullname = (select substring(match from 2) from aux_regexp_search('<' || :aliased_name_pattern, :open_tag, 1));
+            attributes = (select trim(match) from aux_regexp_search(:attribute_list_pattern, :open_tag, 1));
             name = substring(fullname from maxvalue(position(':' in fullname) + 1, 0));
             ns_alias = substring(fullname from 1 for maxvalue(position(name in fullname) - 2, 0));
 

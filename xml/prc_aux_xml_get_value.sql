@@ -1,5 +1,15 @@
 set term ^ ;
 
+
+execute block
+as
+begin
+    if (not exists(select * from rdb$exceptions where rdb$exception_name = 'AUX_ERROR'))
+        then execute statement 'create exception AUX_ERROR ''''';
+end^
+
+commit^
+
 create or alter procedure aux_xml_get_value(
     xml_source blob sub_type text
     , node_name varchar(64)

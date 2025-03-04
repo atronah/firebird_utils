@@ -141,4 +141,6 @@ begin
         restore_primary_key_3 = prev_primary_key_3;
         suspend;
     end
-end
+end^
+
+set term ; ^

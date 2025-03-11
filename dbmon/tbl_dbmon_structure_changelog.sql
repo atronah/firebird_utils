@@ -76,7 +76,7 @@ comment on column dbmon_structure_changelog.engine_version is 'The Firebird engi
 
 comment on column dbmon_structure_changelog.context_variables is 'Values of context variables from MON$CONTEXT_VARIABLES for current transaction and current session';
 
-comment on column dbmon_structure_changelog.prev_unified_create_statement is 'Create statement for previous version ob database object (before update) computed by procedure `aux_get_create_statement`';
+comment on column dbmon_structure_changelog.prev_unified_create_statement is 'Create statement for previous version of database object (before update) computed by procedure `aux_get_create_statement`';
 
 create sequence dbmon_structure_changelog_seq;
 

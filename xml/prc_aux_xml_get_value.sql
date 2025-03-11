@@ -118,7 +118,6 @@ begin
 
     vtype = coalesce(vtype, 'str');
     req = coalesce(req, 0);
-    node_index = coalesce(node_index, 1);
     check_nil_attribute = coalesce(check_nil_attribute, 1);
 
     pos = 1;

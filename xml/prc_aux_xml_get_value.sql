@@ -119,6 +119,7 @@ begin
     vtype = coalesce(vtype, 'str');
     req = coalesce(req, 0);
     check_nil_attribute = coalesce(check_nil_attribute, 1);
+    node_index = coalesce(node_index, 1);
 
     pos = 1;
     error_code = 0;
@@ -130,7 +131,7 @@ begin
         then execute procedure aux_raise_exception(1, 'XML node name cannot be empty');
 
     is_load_all_exists = 0;
-    if(node_index is null) then
+    if(node_index <= 0) then
     begin
         is_load_all_exists = 1;
         node_index = 1;
@@ -366,7 +367,7 @@ Allowed statuses:
 - 0 (default) - not required;
 - 1 - required (if node is not found procedure will return non zero `error_code` and non empty `error_text`);
 - 2 (or more) - required (if node is not found procedure will raise exeption);';
-comment on parameter aux_xml_get_value.node_index is 'The ordinal number of XML node being searched for (default is `1`). If `null`, all XML nodes with specified name will be returned.';
+comment on parameter aux_xml_get_value.node_index is 'The ordinal number of XML node being searched for (default is `1`). If `0` or less, all XML nodes with specified name will be returned.';
 comment on parameter aux_xml_get_value.check_nil_attribute is 'Determines whether the XMLSchema-instance `nil` attribute should be checked.
 Allowed values:
 - null/0 or less - ignore `nil` attribute;

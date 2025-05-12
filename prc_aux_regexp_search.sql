@@ -22,7 +22,7 @@ begin
     -- source: https://github.com/atronah/firebird_utils
 
     syntax = coalesce(syntax, 0);
-    only_first = coalesce(only_first, 1)
+    only_first = coalesce(only_first, 1);
     startpos = null;
     pos = 1;
     endpos = 1;

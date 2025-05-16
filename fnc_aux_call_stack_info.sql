@@ -31,7 +31,9 @@ declare source_line type of column mon$call_stack.mon$source_line;
 declare source_column type of column mon$call_stack.mon$source_column;
 declare call_id_list varchar(1024);
 declare call_info varchar(4096);
+declare stmt_timestamp timestamp;
 begin
+    stmt_timestamp = cast('now' as timestamp);
     stmt_prefix = trim(coalesce(stmt_prefix, 'stmt:'));
     stmt_length = coalesce(stmt_length, 64);
     depth_limit = coalesce(depth_limit, 16);
@@ -39,9 +41,11 @@ begin
     call_info = '';
     call_id_list = '';
 
-    sql_text = (select left(mon$sql_text, :stmt_length) from mon$statements as s where s.mon$statement_id = :mon$statement_id);
-    sql_text = replace(replace(sql_text, ascii_char(10), ''), ascii_char(13), '');
-    call_info = left(call_info || stmt_prefix || coalesce(sql_text, 'null') || ascii_char(10), 4096);
+    sql_text = (select mon$sql_text from mon$statements as s where s.mon$statement_id = :mon$statement_id);
+    call_info = left(call_info
+                    || '---- ' || trim('(' || stmt_timestamp || ') ' || stmt_prefix) || ' ----' || ascii_char(10)
+                    || trim(left(coalesce(sql_text, 'null'), :stmt_length)) || ascii_char(10)
+                    , 4096);
 
     for select cs.mon$call_id, cs.mon$caller_id, cs.mon$object_name, cs.mon$source_line, cs.mon$source_column
         from mon$call_stack as cs
@@ -61,11 +65,19 @@ begin
                 from mon$call_stack as cs
                 where cs.mon$call_id = :caller_id
                 into call_id, caller_id, object_name, source_line, source_column;
-
-            call_info = left(call_info || '  ' || call_id || ':' || frmt(object_name, source_line, source_column, caller_id) || ascii_char(10), 4096);
+            if (call_id is not null) then
+            begin
+                call_info = left(call_info
+                                || '  ' || call_id || ':'
+                                || frmt(object_name, source_line, source_column, caller_id)
+                                || ascii_char(10)
+                                , 4096);
+            end
             depth = depth + 1;
         end
     end
+
+    call_info = left(call_info || '--------' || ascii_char(10), 4096);
 
     return call_info;
 end^

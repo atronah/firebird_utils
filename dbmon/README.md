@@ -1,15 +1,15 @@
 # Database objects changes monitoring tools
 
+- **Version**: [1.1.0 from 2025-06-04](https://github.com/atronah/firebird_utils/releases/tag/dbmon_v1.1.0)
+
 This solution allows you to track changes of database meta objects (structure changes) like procedures, triggers, tables, etc.
 and changes in values of table fields (data changes).
 
 <!-- MarkdownTOC autolink="true" lowercase="all" uri_encoding="false" -->
 
-- [Install](#install)
-    - [Auxiliary reuquirements](#auxiliary-reuquirements)
-    - [To track database structure changes](#to-track-database-structure-changes)
 - [How it works](#how-it-works)
-- [How to install](#how-to-install)
+- [Install](#install)
+    - [Manually install](#manually-install)
 - [How to setup](#how-to-setup)
     - [Common settings](#common-settings)
         - [log_attachement_client_os_user](#log_attachement_client_os_user)
@@ -27,22 +27,6 @@ and changes in values of table fields (data changes).
 <!-- /MarkdownTOC -->
 
 
-## Install
-
-### Auxiliary reuquirements
-
-To install required  dependecies reate 
-
-
-- (required) procedure [aux_split_text][]
-- (optional) [aux_get_create_statement][]
-
-### To track database structure changes
-
-- create table 
-
-
-
 ## How it works
 
 All database structure changes are detected by DDL-trigger [dbmon_before_any_ddl_statement][]
@@ -50,15 +34,30 @@ and saved into table [dbmon_structure_changelog][].
 
 Data changes are detected by special dbmon-triggers on tables (which you decided to track)
 and saved into table [dbmon_data_changelog][].
-Required to track special dbmon-triggers are created automatically by procedure [dbmon_create_triggers][] 
-when you add new tracking rule into table [dbmon_tracked_field][] with value `1` in field `update_track_triggers = 1` 
+Required to track special dbmon-triggers are created automatically by procedure [dbmon_create_triggers][]
+when you add new tracking rule into table [dbmon_tracked_field][] with value `1` in field `update_track_triggers = 1`
 (or when you change value of field `update_track_triggers` to `1` for existed rule).
 
 
+## Install
 
-## How to install
+See all versions of `dbmon` on [Realease page](https://github.com/atronah/firebird_utils/releases/).
 
-To install that solution into your database you should:
+All version description includes archive (name should be like `dbmon_v#.#.#.7z`),
+which should contain the following scripts:
+
+- `00_dbmon_aux.sql` - to install or update auxiliary requirements,
+which includes:
+    - (required) procedure [aux_split_text][]
+    - (optional) [aux_get_create_statement][]
+- `01_dbmon_install.sql` - to initial install `dbmon`
+(on database in which it was not previously installed)
+- `02_dbmon_update.sql` - to update `dbmon`, installed before
+
+
+### Manually install
+
+To install that solution manually into your database you should:
 
 - create or update (alter) required auxiliary dependecies
     - (required) procedure [aux_split_text][] - needs for dbmon triggers on changelog tables to process list of context variables from dbmon settings
@@ -79,7 +78,6 @@ To install that solution into your database you should:
     - create trigger [dbmon_tracked_field_bui][] - to replace null-values by default values
 
 P.S.: if some tables already exist in database you can update its fields using scripts from [update_fields.sql][].
-
 
 
 ## How to setup

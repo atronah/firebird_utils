@@ -1,0 +1,3 @@
+[submodule "sql_deploy"]
+	path = sql_deploy
+	url = https://github.com/atronah/sql_deploy.git

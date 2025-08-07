@@ -21,10 +21,6 @@ declare field_description type of column rdb$relation_fields.rdb$description;
 declare extra_cond type of column dbmon_tracked_field.extra_cond;
 declare idx bigint;
 declare available_name_legth bigint;
-declare name_gen_attempt bigint;
-declare TRIGGER_NAME_PREFIX varchar(32) = 'dbmon';
-declare TRIGGER_NAME_SUFFIX varchar(32) = 'auid';
-declare NAME_GEN_ATTEMPT_LIMIT bigint = 99;
 begin
     -- author: atronah (look for me by this nickname on GitHub and GitLab)
     -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
@@ -41,35 +37,8 @@ begin
     do
     begin
         started = cast('now' as timestamp);
-        TRIGGER_NAME_PREFIX = upper(TRIGGER_NAME_PREFIX);
-        TRIGGER_NAME_SUFFIX = upper(TRIGGER_NAME_SUFFIX);
-        available_name_legth = 31 - char_length(TRIGGER_NAME_PREFIX || TRIGGER_NAME_SUFFIX || '__');
 
-        trigger_name = (select trim(rdb$trigger_name)
-                        from rdb$triggers
-                        where rdb$relation_name = :table_name
-                            and rdb$trigger_name starts with (:TRIGGER_NAME_PREFIX || '_')
-                            and right(trim(rdb$trigger_name), char_length(:TRIGGER_NAME_SUFFIX) + 1) = '_' || :TRIGGER_NAME_SUFFIX);
-        if (trigger_name is null) then
-        begin
-            trigger_name = TRIGGER_NAME_PREFIX
-                            || '_' || left(table_name, available_name_legth)
-                            || '_' || TRIGGER_NAME_SUFFIX;
-            name_gen_attempt = 0;
-            while (exists(select *
-                            from rdb$triggers
-                            where rdb$trigger_name = :trigger_name
-                                and rdb$relation_name is distinct from :table_name)
-                    and name_gen_attempt < NAME_GEN_ATTEMPT_LIMIT)
-            do
-            begin
-                name_gen_attempt = name_gen_attempt + 1;
-                trigger_name = TRIGGER_NAME_PREFIX
-                                || '_' || left(table_name, available_name_legth - char_length(name_gen_attempt) - 1)
-                                || '_' || name_gen_attempt
-                                || '_' || TRIGGER_NAME_SUFFIX;
-            end
-        end
+        trigger_name = dbmon_trigger_name(:table_name, 'auid');
 
         create_trigger_statement = '';
         stmt_part = '';

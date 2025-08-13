@@ -2,7 +2,8 @@ create table dbmon_settings(
     key varchar(64)
     , val varchar(1024)
     , description varchar(1024)
-    , constraint dbmon_settings primary key (key)
+
+    , constraint pk_dbmon_settings primary key (key)
 );
 
 

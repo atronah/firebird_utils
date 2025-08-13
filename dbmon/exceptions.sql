@@ -1,0 +1,1 @@
+create exception DBMON_CHANGES_NOT_ALLOWED 'That object changes are not allowed';

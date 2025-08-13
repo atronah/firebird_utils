@@ -30,12 +30,26 @@ begin
     count_of_created_triggers = 0;
 
     for select distinct
-            upper(trim(tf.table_name))
+            tf.table_name
         from dbmon_tracked_field as tf
         where tf.table_name = coalesce(:table_name_filter, tf.table_name)
         into table_name
     do
     begin
+        if (not exists(select r.rdb$relation_name
+                        from rdb$relations as r
+                        where r.rdb$relation_name = :table_name)
+        ) then
+        begin
+            update dbmon_tracked_field as tf
+                    set tf.update_track_triggers = 0
+                        , tf.errors = 'Table with name' || coalesce('"' || :table_name || '"', 'null') || ' not found'
+                where tf.table_name = :table_name;
+            continue;
+        end
+
+        table_name = upper(trim(table_name));
+
         started = cast('now' as timestamp);
 
         trigger_name = dbmon_trigger_name(:table_name, 'auid');
@@ -179,12 +193,12 @@ begin
         if (work_mode = 0) then
         begin
             create_trigger_statement = 'set term ^ ;' || ascii_char(13) || ascii_char(10)
-                                        || create_trigger_statement || '^'
+                                        || nullif(create_trigger_statement, '') || '^'
                                         || ascii_char(13) || ascii_char(10)
                                         || 'set term ; ^';
             suspend;
         end
-        else if (work_mode = 1)
+        else if (work_mode = 1 and create_trigger_statement > '')
             then execute statement create_trigger_statement;
     end
 

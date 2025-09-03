@@ -42,7 +42,7 @@ begin
     new.client_user = coalesce(new.client_user, old.client_user, current_user);
     new.client_role = coalesce(new.client_role, old.client_role, current_role);
     new.client_protocol = coalesce(new.client_protocol, old.client_protocol, rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL'));
-    new.client_version = coalesce(new.client_protocol, old.client_protocol, rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL'));
+    new.client_version = coalesce(new.client_version, old.client_version, rdb$get_context('USER_SESSION', 'DBMON_CLIENT_VERSION'));
     new.client_os_user = coalesce(new.client_os_user, old.client_os_user, rdb$get_context('USER_SESSION', 'DBMON_CLIENT_OS_USER'));
     new.server_pid = coalesce(new.server_pid, old.server_pid, rdb$get_context('USER_SESSION', 'DBMON_SERVER_PID'));
     new.auth_method = coalesce(new.auth_method, old.auth_method, rdb$get_context('USER_SESSION', 'DBMON_AUTH_METHOD'));
@@ -74,6 +74,8 @@ begin
 
         if (new.client_os_user is not null)
             then rdb$set_context('USER_SESSION', 'DBMON_CLIENT_OS_USER', new.client_os_user);
+        if (new.client_version is not null)
+            then rdb$set_context('USER_SESSION', 'DBMON_CLIENT_VERSION', new.client_version);
         if (new.client_os_user is not null)
             then rdb$set_context('USER_SESSION', 'DBMON_SERVER_PID', new.server_pid);
         if (new.client_os_user is not null)

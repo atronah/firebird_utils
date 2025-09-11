@@ -18,6 +18,9 @@ declare end_quote_pos bigint;
 declare len bigint;
 declare allowed_name_symbols varchar(1024);
 begin
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- source: https://github.com/atronah/firebird_utils
+
     allowed_name_symbols = 'abcdefghijklmnopqrstuvwxyz'
                             || 'абвгдеёжзиклмнопрстуфхцчшщъыьэюя';
     allowed_name_symbols = lower(allowed_name_symbols)

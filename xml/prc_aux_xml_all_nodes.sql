@@ -55,8 +55,6 @@ declare saved_endpos bigint;
 declare content_offset bigint;
 -- Constants
 declare NESTED_LIMIT smallint = 100;
-declare ENDL varchar(2) = '
-';
 begin
     -- author: atronah (look for me by this nickname on GitHub and GitLab)
     -- source: https://github.com/atronah/firebird_utils

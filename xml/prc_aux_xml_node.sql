@@ -104,13 +104,13 @@ begin
                             , '/>' -- empty node (`<a />`)
                             , '>' -- node with value (`<a>v</a>`)
                                 -- newline characters for `node` type
-                                || iif(vtype in ('node'), ascii_char(13) || ascii_char(10), '')
+                                || iif(vtype in ('node'), ascii_char(10), '')
                                 -- value of node
                                 || val
                                 -- clossing tag
                                 || '</' || name || '>')
                     -- newline characters
-                    || ascii_char(13) || ascii_char(10)
+                    || ascii_char(10)
                 );
     suspend;
 end^

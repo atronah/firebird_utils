@@ -1,3 +1,5 @@
+set term ^ ;
+
 create or alter procedure aux_json_get_value(
     json blob sub_type text
     , node_name varchar(128)
@@ -179,4 +181,6 @@ begin
         pos_offset = iif(value_block_length > 0, value_block_pos + value_block_length + 1, node_pos + 1);
         node_pos = position('"' || node_name  || '"', json, pos_offset);
     end
-end
+end^
+
+set term ; ^

@@ -22,7 +22,7 @@ end^
 
 set term ; ^
 
-comment on function auxf_xml is 'Creates json node with specified value (of scpecified type) with passed attributes (uses procedure `aux_json_node`)';
+comment on function auxf_json is 'Creates json node with specified value (of scpecified type) with passed attributes (uses procedure `aux_json_node`)';
 
 comment on parameter auxf_json.name is 'name of node';
 comment on parameter auxf_json.val is 'value of node';

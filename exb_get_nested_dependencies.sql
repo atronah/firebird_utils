@@ -23,28 +23,28 @@ begin
 
     name_prefix = 'MDS_';
 
-    select coalesce(list('''' || trim(rdb$relation_name) || '''' || ascii_char(13) || ascii_char(10)), 'null')
+    select list('''' || trim(rdb$relation_name) || '''' || ascii_char(13) || ascii_char(10))
         from rdb$relations
         where coalesce(rdb$relation_type, 0) = 0 -- 0 - system or user-defined table
             and trim(rdb$relation_name) starts with :name_prefix
         into tables;
-    select coalesce(list('''' || trim(rdb$relation_name) || '''' || ascii_char(13) || ascii_char(10)), 'null')
+    select list('''' || trim(rdb$relation_name) || '''' || ascii_char(13) || ascii_char(10))
         from rdb$relations
         where rdb$relation_type = 1 -- 1 - view
             and trim(rdb$relation_name) starts with :name_prefix
         into views;
-    select coalesce(list('''' || trim(rdb$trigger_name) || '''' || ascii_char(13) || ascii_char(10)), 'null')
+    select list('''' || trim(rdb$trigger_name) || '''' || ascii_char(13) || ascii_char(10))
         from rdb$triggers
         where trim(rdb$trigger_name) starts with :name_prefix
         into triggers;
-    select coalesce(list('''' || trim(rdb$procedure_name) || '''' || ascii_char(13) || ascii_char(10)), 'null')
+    select list('''' || trim(rdb$procedure_name) || '''' || ascii_char(13) || ascii_char(10))
         from rdb$procedures
         where trim(rdb$procedure_name) starts with :name_prefix
         into procedures;
 
-    exceptions = 'null';
-    columns = 'null';
-    sequences = 'null';
+    exceptions = null;
+    columns = null;
+    sequences = null;
 
     stmt = 'select
             trim(decode(rdb$depended_on_type
@@ -81,27 +81,27 @@ begin
             into type_name, obj_list
         do
         begin
-            if (type_name = 'table') then tables = tables || ',' || obj_list;
-            else if (type_name = 'view') then views = views || ',' || obj_list;
-            else if (type_name = 'trigger') then triggers = triggers || ',' || obj_list;
+            if (type_name = 'table') then tables = coalesce(tables || ',', '') || obj_list;
+            else if (type_name = 'view') then views = coalesce(views || ',', '') || obj_list;
+            else if (type_name = 'trigger') then triggers = coalesce(triggers || ',', '') || obj_list;
             else if (type_name = 'procedure') then new_procedures = obj_list;
-            else if (type_name = 'exception') then exceptions = exceptions || ',' || obj_list;
-            else if (type_name = 'column') then columns = columns || ',' || obj_list;
-            else if (type_name = 'sequence') then sequences = sequences || ',' || obj_list;
+            else if (type_name = 'exception') then exceptions = coalesce(exceptions || ',', '') || obj_list;
+            else if (type_name = 'column') then columns = coalesce(columns || ',', '') || obj_list;
+            else if (type_name = 'sequence') then sequences = coalesce(sequences || ',', '') || obj_list;
         end
 
-        if (coalesce(new_procedures, '') <> '') then
+        if (coalesce(new_procedures, '') > '') then
         begin
             cond = 'in (' || new_procedures || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || tables || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || views || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || triggers || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || procedures || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || exceptions || ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || columns|| ')'
-                    || ' and trim(rdb$depended_on_name) not in (' || sequences || ')'
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || tables || ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || views || ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || triggers || ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || procedures || ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || exceptions || ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || columns|| ')', ''))
+                    || trim(coalesce(' and trim(rdb$depended_on_name) not in (' || sequences || ')', ''))
                     ;
-            procedures = procedures || ',' || new_procedures;
+            procedures = coalesce(procedures || ',', '') || new_procedures;
         end
         else cond = null;
     end

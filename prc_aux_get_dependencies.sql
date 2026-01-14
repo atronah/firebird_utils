@@ -56,10 +56,8 @@ begin
                                                 , :TYPE_TABLE_NAME, :TYPE_TABLE
                                                 , :TYPE_VIEW_NAME, :TYPE_VIEW
                                                 , :TYPE_TRIGGER_NAME, :TYPE_TRIGGER
-                                                , :TYPE_PROCEDURE_PARAM_NAME, :TYPE_PROCEDURE
                                                 , :TYPE_PROCEDURE_NAME, :TYPE_PROCEDURE
                                                 , :TYPE_EXCEPTION_NAME, :TYPE_EXCEPTION
-                                                , :TYPE_COLUMN_NAME, :TYPE_COLUMN
                                                 , :TYPE_SEQUENCE_NAME, :TYPE_SEQUENCE
                                                 , :TYPE_DOMAIN_NAME, :TYPE_DOMAIN
                                                 , lower(trim(part))))
@@ -223,15 +221,15 @@ i.e. all db objects which are requeired for creating objects from first arguemnt
 comment on parameter aux_get_dependencies.objects_to_exclude_regex is 'Regular expression (like for `similar to` statement) for names of ignored objects';
 comment on parameter aux_get_dependencies.types_to_exclude is 'List of ignored types of objects.
 Comma separated names or integer values corresponding to values of field RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE from list bellow:
-- `table` or `0` - table
+- `table` or `0` - for table and its columns
 - `view` or `1`
 - `trigger` or `2`
 - `3` - computed column
 - `4` - CHECK constraint
-- `procedure param` or `procedure` or `5`
+- `procedure` or `5`
 - `exception` or `7`
 - `8` - user
-- `column` or `9`
+- `domain` - user
 - `10` - index
 - `sequence` or `14`
 - `15` - UDF
@@ -244,13 +242,12 @@ comment on parameter aux_get_dependencies.object_name is 'Name of required objec
 comment on parameter aux_get_dependencies.object_column is 'Name of required column';
 comment on parameter aux_get_dependencies.object_type is 'Type of required object
 (based on values of RDB$DEPENDENCIES.RDB$DEPENDED_ON_TYPE):
-- -1 - domain
-- 0 - table
+- 0 - table/column
 - 1 - view
 - 2 - trigger
-- 5 - procedure
+- 5 - procedure/parameter
 - 7 - exception
-- 9 - column
+- 9 - domain
 - 14 - sequence
 ';
 comment on parameter aux_get_dependencies.object_type_name is 'Name of required object';

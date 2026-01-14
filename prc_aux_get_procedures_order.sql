@@ -141,7 +141,38 @@ end^
 
 set term ; ^
 
-comment on procedure aux_get_procedures_order is 'Returns all passed procedures in order for creating.';
+comment on procedure aux_get_procedures_order is 'Returns all passed procedures in order for creating.
+
+Loop dependencies processing working badly,
+for example, if you create procedures `A` which call `B` which call `C` which call `D` which call `A` and independent `E`
+
+```sql
+set term ^ ;
+
+create or alter procedure D(x varchar(32)) returns (y varchar(32)) as begin suspend; end^
+drop procedure A^
+drop procedure B^
+drop procedure C^
+drop procedure D^
+drop procedure E^
+
+create or alter procedure E(x varchar(32)) returns (y varchar(32)) as begin y = ''E:'' || x; suspend; end^
+create or alter procedure D(x varchar(32)) returns (y varchar(32)) as begin suspend; end^
+create or alter procedure C(x varchar(32)) returns (y varchar(32)) as begin y = ''C:'' || (select y from D(:x)); suspend; end^
+create or alter procedure B(x varchar(32)) returns (y varchar(32)) as begin y = ''B:'' || (select y from C(:x)); suspend; end^
+create or alter procedure A(x varchar(32)) returns (y varchar(32)) as begin y = ''A:'' || (select y from B(:x)); suspend; end^
+create or alter procedure D(x varchar(32)) returns (y varchar(32)) as begin y = ''D:'' || (select y from A(:x)); suspend; end^
+
+
+set term ; ^
+```
+
+that procedure returns only `E`
+
+```sql
+select * from aux_get_procedures_order(''A,B,C,D,E'')
+```
+';
 
 -- input parameters
 comment on parameter aux_get_procedures_order.procedures_list is 'List of procedures to calculate creating order';

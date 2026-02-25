@@ -27,5 +27,5 @@ end^
 
 set term ; ^
 
-comment on trigger dbmon_tracked_field_aui is 'Trigger to disable dbmon triggers on tables which was removed from  `dbmon_tracked_field`.
+comment on trigger dbmon_tracked_field_ad is 'Trigger to disable dbmon triggers on tables which was removed from  `dbmon_tracked_field`.
 See https://github.com/atronah/firebird_utils/tree/master/dbmon for details.';

@@ -36,6 +36,8 @@ begin
         into table_name
     do
     begin
+        table_name = upper(trim(replace(table_name, '''', '''''')));
+
         if (not exists(select r.rdb$relation_name
                         from rdb$relations as r
                         where r.rdb$relation_name = :table_name)
@@ -47,8 +49,6 @@ begin
                 where tf.table_name = :table_name;
             continue;
         end
-
-        table_name = upper(trim(table_name));
 
         started = cast('now' as timestamp);
 

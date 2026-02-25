@@ -4,29 +4,30 @@ create or alter procedure dbmon_create_triggers(
     , work_mode smallint = null
 )
 returns (
-    count_of_created_triggers bigint
-    , table_name type of column dbmon_tracked_field.table_name
+    table_name type of column dbmon_tracked_field.table_name
     , trigger_name type of column rdb$triggers.rdb$trigger_name
     , create_trigger_statement tblob
+    , comment_trigger_statement tblob
     , primary_keys_block varchar(8000)
     , primary_key_fields type of column dbmon_data_changelog.primary_key_fields
+    , started timestamp
     , generation_duration_in_ms bigint
+    , finished timestamp
+    , count_of_created_triggers bigint
 )
 as
 declare stmt_part varchar(32000);
-declare started timestamp;
-declare finished timestamp;
 declare field_name type of column dbmon_tracked_field.field_name;
 declare field_description type of column rdb$relation_fields.rdb$description;
 declare extra_cond type of column dbmon_tracked_field.extra_cond;
 declare idx bigint;
-declare available_name_legth bigint;
 begin
     -- author: atronah (look for me by this nickname on GitHub and GitLab)
     -- source: https://github.com/atronah/firebird_utils/tree/master/dbmon
 
     table_name_filter = nullif(upper(trim(table_name_filter)), '');
     work_mode = coalesce(work_mode, 0);
+
     count_of_created_triggers = 0;
 
     for select distinct
@@ -55,6 +56,8 @@ begin
         trigger_name = dbmon_trigger_name(:table_name, 'auid');
 
         create_trigger_statement = '';
+        comment_trigger_statement = '';
+
         stmt_part = '';
         for select distinct
                 upper(trim(rdb$field_name))
@@ -96,6 +99,7 @@ begin
     end'
             ;
         end
+
         create_trigger_statement = create_trigger_statement || stmt_part;
 
         primary_keys_block = '';
@@ -123,7 +127,7 @@ begin
 
         if (create_trigger_statement is not null) then
         begin
-            create_trigger_statement = 'create or alter trigger ' || trigger_name || '
+            create_trigger_statement = 'create or alter trigger ' || trim(trigger_name) || '
 active
 after update or insert or delete
 on ' || table_name || '
@@ -183,6 +187,7 @@ begin
     end
 end
 ';
+            comment_trigger_statement = 'comment on trigger ' || trim(trigger_name) || ' is ''Created/modified ' || current_timestamp || ''';';
         end
         finished = cast('now' as timestamp);
         generation_duration_in_ms = datediff(millisecond from started to finished);
@@ -195,8 +200,16 @@ end
                                         || 'set term ; ^';
             suspend;
         end
-        else if (work_mode = 1 and create_trigger_statement > '')
-            then execute statement create_trigger_statement;
+        else if (work_mode = 1) then
+        begin
+            if (create_trigger_statement > '') then
+            begin
+                execute statement create_trigger_statement;
+                count_of_created_triggers = count_of_created_triggers + 1;
+            end
+            if (comment_trigger_statement > '')
+                then execute statement comment_trigger_statement;
+        end
     end
 
     if (work_mode = 1) then

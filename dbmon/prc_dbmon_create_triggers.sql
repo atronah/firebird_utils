@@ -199,7 +199,7 @@ end
             then execute statement create_trigger_statement;
     end
 
-    if (work_mode = 0) then
+    if (work_mode = 1) then
     begin
         table_name = null;
         trigger_name = null;

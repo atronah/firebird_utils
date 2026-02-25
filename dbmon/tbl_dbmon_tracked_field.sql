@@ -20,7 +20,7 @@ comment on column dbmon_tracked_field.table_name is 'Name of table to track data
 comment on column dbmon_tracked_field.field_name is 'Name of column of table to track data changing in it.
 Special values:
 - `*` all fields changes will be tracked separatelly
-- `?` changes of any field will by tracked as one log record with `?` in `changed_field_name`';
+- `?` changes of any field will be tracked as one log record with `?` in `changed_field_name`';
 comment on column dbmon_tracked_field.enabled is 'Enables tracking if is not `null`/`0`';
 comment on column dbmon_tracked_field.extra_cond is 'Extra cond with using fields of `new` and `old` record, to reduce record of tracking';
 comment on column dbmon_tracked_field.exclude_roles is 'Database roles separated by comma for whom tracking is disabled';

@@ -121,7 +121,7 @@ begin
                             || '    primary_key_fields = ''' || primary_key_fields || ''';'
                             || ascii_char(10);
 
-        if (create_trigger_statement > '') then
+        if (create_trigger_statement is not null) then
         begin
             create_trigger_statement = 'create or alter trigger ' || trigger_name || '
 active

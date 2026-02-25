@@ -16,15 +16,17 @@ begin
     trigger_name_prefix = upper('dbmon');
     trigger_name_suffix = upper(coalesce(trigger_name_suffix, 'auid'));
 
-    available_name_legth = coalesce(available_name_legth, 31) - char_length(trigger_name_prefix || trigger_name_suffix || '__');
     table_name = replace(table_name, '''', '''''');
 
+    available_name_legth = coalesce(available_name_legth, 31);
+    available_name_legth = available_name_legth - char_length(trigger_name_prefix || trigger_name_suffix || '__');
 
     trigger_name = (select trim(rdb$trigger_name)
                     from rdb$triggers
                     where rdb$relation_name = :table_name
                         and rdb$trigger_name starts with (:trigger_name_prefix || '_')
                         and right(trim(rdb$trigger_name), char_length(:trigger_name_suffix) + 1) = '_' || :trigger_name_suffix);
+
     if (trigger_name is null) then
     begin
         trigger_name = trigger_name_prefix

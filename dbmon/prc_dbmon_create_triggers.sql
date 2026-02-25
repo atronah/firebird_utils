@@ -80,21 +80,21 @@ begin
             field_description = left(field_description, 255);
 
             stmt_part = stmt_part || '
-                    -- ' || field_name || trim(coalesce(' - ' || field_description, '')) || '
-                    if (new.' || field_name || ' is distinct from old.' || field_name
-                    || iif(extra_cond > '', ' and (' || extra_cond || ')', '')
-                    || ' and '','' || enabled_field_names || '','' like ''%,' || field_name || ',%'''
-                    || ') then
-                    begin
-                        is_unknown_field_mark = 0;
-                        insert into dbmon_data_changelog
-                                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields
-                                , change_type, changed_field_name, old_value, new_value)
-                        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields
-                                , :change_type, ''' || field_name || '''
-                                , left(old.' || field_name || ', 16000), left(new.' || field_name || ', 16000));
-                    end
-                ';
+    -- ' || field_name || trim(coalesce(' - ' || field_description, '')) || '
+    if (new.' || field_name || ' is distinct from old.' || field_name
+    || iif(extra_cond > '', ' and (' || extra_cond || ')', '')
+    || ' and '','' || enabled_field_names || '','' like ''%,' || field_name || ',%'''
+    || ') then
+    begin
+        is_unknown_field_mark = 0;
+        insert into dbmon_data_changelog
+                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields
+                , change_type, changed_field_name, old_value, new_value)
+        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields
+                , :change_type, ''' || field_name || '''
+                , left(old.' || field_name || ', 16000), left(new.' || field_name || ', 16000));
+    end'
+            ;
         end
         create_trigger_statement = create_trigger_statement || stmt_part;
 
@@ -113,79 +113,76 @@ begin
         do
         begin
             primary_key_fields = primary_key_fields || field_name || ';';
-            primary_keys_block = primary_keys_block || '
-                    primary_key_' || trim(idx + 1) || ' = coalesce(new.' || field_name || ', old.' || field_name || ');
-                    ';
+            primary_keys_block = primary_keys_block
+                                    || '    primary_key_' || trim(idx + 1) || ' = coalesce(new.' || field_name || ', old.' || field_name || ');'
+                                    || ascii_char(10);
         end
-        primary_keys_block = primary_keys_block || '
-                    primary_key_fields = ''' || primary_key_fields || ''';
-                    ';
+        primary_keys_block = primary_keys_block
+                            || '    primary_key_fields = ''' || primary_key_fields || ''';'
+                            || ascii_char(10);
 
         if (create_trigger_statement > '') then
         begin
             create_trigger_statement = 'create or alter trigger ' || trigger_name || '
-                active
-                after update or insert or delete
-                on ' || table_name || '
-                as
-                declare is_unknown_field_mark smallint;
-                declare primary_key_fields type of column dbmon_data_changelog.primary_key_fields;
-                declare table_name type of column dbmon_data_changelog.table_name;
-                declare primary_key_1 type of column dbmon_data_changelog.primary_key_1;
-                declare primary_key_2 type of column dbmon_data_changelog.primary_key_2;
-                declare primary_key_3 type of column dbmon_data_changelog.primary_key_3;
-                declare change_type type of column dbmon_data_changelog.change_type;
-                declare enabled_field_names varchar(16384);
-                begin
-                    enabled_field_names = (select list(distinct
-                                                            trim(coalesce(rdb$field_name
-                                                                            , iif(tf.field_name = ''?''
-                                                                                    , tf.field_name
-                                                                                    , null)
-                                                                        )
-                                                                )
-                                                    )
-                                            from dbmon_tracked_field as tf
-                                                left join rdb$relation_fields as rf on rf.rdb$relation_name = tf.table_name
-                                                                                    and (rf.rdb$field_name = upper(tf.field_name)
-                                                                                            or tf.field_name = ''*'')
-                                            where tf.table_name = '''|| table_name || '''
-                                                and coalesce(tf.enabled, 0) = 1
-                                                and '','' || coalesce(tf.exclude_roles, '''') || '','' not like ''%,'' || current_role || '',%''
-                                            );
-                    if (coalesce(enabled_field_names, '''') = '''')
-                        then exit;
+active
+after update or insert or delete
+on ' || table_name || '
+as
+declare is_unknown_field_mark smallint;
+declare primary_key_fields type of column dbmon_data_changelog.primary_key_fields;
+declare table_name type of column dbmon_data_changelog.table_name;
+declare primary_key_1 type of column dbmon_data_changelog.primary_key_1;
+declare primary_key_2 type of column dbmon_data_changelog.primary_key_2;
+declare primary_key_3 type of column dbmon_data_changelog.primary_key_3;
+declare change_type type of column dbmon_data_changelog.change_type;
+declare enabled_field_names varchar(16384);
+begin
+    enabled_field_names = (select
+                                list(distinct
+                                    trim(coalesce(rdb$field_name
+                                                    , iif(tf.field_name = ''?'', tf.field_name, null)))
+                                )
+                            from dbmon_tracked_field as tf
+                                left join rdb$relation_fields as rf on rf.rdb$relation_name = tf.table_name
+                                                                    and (rf.rdb$field_name = upper(tf.field_name)
+                                                                            or tf.field_name = ''*'')
+                            where tf.table_name = '''|| table_name || '''
+                                and coalesce(tf.enabled, 0) = 1
+                                and '','' || coalesce(tf.exclude_roles, '''') || '','' not like ''%,'' || current_role || '',%''
+                            );
+    if (coalesce(enabled_field_names, '''') = '''')
+        then exit;
 
-                    table_name = ''' || table_name || ''';
-                    ' || primary_keys_block || '
+    table_name = ''' || table_name || ''';
+    ' || primary_keys_block || '
 
-                    change_type = case
-                            when INSERTING then ''INSERT''
-                            when UPDATING then ''UPDATE''
-                            when DELETING then ''DELETE''
-                    end;
-                    is_unknown_field_mark = 1;
+    change_type = case
+            when INSERTING then ''INSERT''
+            when UPDATING then ''UPDATE''
+            when DELETING then ''DELETE''
+    end;
 
-                    '
-                    || create_trigger_statement || '
+    is_unknown_field_mark = 1;
+    ' || create_trigger_statement || '
+    -- log fact of changes in table without specifying changed field names
+    -- (that block uses if only rule with field_name=''?'' is enabled for table)
+    if (is_unknown_field_mark > 0
+            and '','' || enabled_field_names || '','' like ''%,?,%''
+    ) then
+    begin
+        insert into dbmon_data_changelog
+                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type, changed_field_name)
+        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, :change_type, ''?'');
+    end
 
-                    if (is_unknown_field_mark > 0
-                            and '','' || enabled_field_names || '','' like ''%,?,%''
-                    ) then
-                    begin
-                        insert into dbmon_data_changelog
-                                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type, changed_field_name)
-                        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, :change_type, ''?'');
-                    end
-
-                    when any do
-                    begin
-                        insert into dbmon_data_changelog
-                                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type)
-                        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, ''ERROR'');
-                    end
-                end
-                ';
+    when any do
+    begin
+        insert into dbmon_data_changelog
+                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type)
+        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, ''ERROR'');
+    end
+end
+';
         end
         finished = cast('now' as timestamp);
         generation_duration_in_ms = datediff(millisecond from started to finished);

@@ -17,6 +17,8 @@ begin
     trigger_name_suffix = upper(coalesce(trigger_name_suffix, 'auid'));
 
     available_name_legth = coalesce(available_name_legth, 31) - char_length(trigger_name_prefix || trigger_name_suffix || '__');
+    table_name = replace(table_name, '''', '''''');
+
 
     trigger_name = (select trim(rdb$trigger_name)
                     from rdb$triggers

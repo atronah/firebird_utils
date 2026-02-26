@@ -15,10 +15,10 @@ declare call_stack_source_column type of column mon$call_stack.mon$source_column
 declare context_variable_name type of column mon$context_variables.mon$variable_name;
 declare context_variable_value type of column mon$context_variables.mon$variable_value;
 
-declare log_attachement_client_os_user smallint;
-declare log_attachement_client_version smallint;
-declare log_attachement_server_pid smallint;
-declare log_attachement_auth_method smallint;
+declare log_attachment_client_os_user smallint;
+declare log_attachment_client_version smallint;
+declare log_attachment_server_pid smallint;
+declare log_attachment_auth_method smallint;
 declare log_call_stack smallint;
 declare log_context_variables type of column dbmon_settings.val;
 begin
@@ -53,14 +53,14 @@ begin
     new.client_pid = coalesce(new.client_pid, old.client_pid, rdb$get_context('SYSTEM', 'CLIENT_PID'));
     new.engine_version = coalesce(new.engine_version, old.engine_version, rdb$get_context('SYSTEM', 'ENGINE_VERSION'));
 
-    log_attachement_client_os_user = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_client_os_user');
-    log_attachement_client_version = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_client_version');
-    log_attachement_server_pid = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_server_pid');
-    log_attachement_auth_method = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachement_auth_method');
-    if (nullif(trim(new.client_os_user), '') is null and log_attachement_client_os_user > 0
-            or nullif(trim(new.client_version), '') is null and log_attachement_client_version > 0
-            or nullif(trim(new.server_pid), '') is null and log_attachement_server_pid > 0
-            or nullif(trim(new.auth_method), '') is null and log_attachement_auth_method > 0
+    log_attachment_client_os_user = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_client_os_user');
+    log_attachment_client_version = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_client_version');
+    log_attachment_server_pid = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_server_pid');
+    log_attachment_auth_method = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_auth_method');
+    if (nullif(trim(new.client_os_user), '') is null and log_attachment_client_os_user > 0
+            or nullif(trim(new.client_version), '') is null and log_attachment_client_version > 0
+            or nullif(trim(new.server_pid), '') is null and log_attachment_server_pid > 0
+            or nullif(trim(new.auth_method), '') is null and log_attachment_auth_method > 0
         ) then
     begin
         select

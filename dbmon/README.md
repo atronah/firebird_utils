@@ -12,10 +12,10 @@ and changes in values of table fields (data changes).
     - [Manually install](#manually-install)
 - [How to setup](#how-to-setup)
     - [Common settings](#common-settings)
-        - [log_attachement_client_os_user](#log_attachement_client_os_user)
-        - [log_attachement_client_version](#log_attachement_client_version)
-        - [log_attachement_server_pid](#log_attachement_server_pid)
-        - [log_attachement_auth_method](#log_attachement_auth_method)
+        - [log_attachment_client_os_user](#log_attachment_client_os_user)
+        - [log_attachment_client_version](#log_attachment_client_version)
+        - [log_attachment_server_pid](#log_attachment_server_pid)
+        - [log_attachment_auth_method](#log_attachment_auth_method)
         - [log_context_variables](#log_context_variables)
         - [log_call_stack](#log_call_stack)
         - [log_prev_unified_create_statement](#log_prev_unified_create_statement)
@@ -92,28 +92,28 @@ There're few types of settings
 
 ### Common settings
 
-#### log_attachement_client_os_user
+#### log_attachment_client_os_user
 
 If more than `0` 
 info from `mon$attachments.mon$remote_os_user` will be saved to `client_os_user` field 
 of tables [dbmon_structure_changelog][] and [dbmon_data_changelog][].
 
 
-#### log_attachement_client_version
+#### log_attachment_client_version
 
 If more than `0` 
 info from `mon$attachments.mon$client_version` will be saved to `client_version` field 
 of tables [dbmon_structure_changelog][] and [dbmon_data_changelog][].
 
 
-#### log_attachement_server_pid
+#### log_attachment_server_pid
 
 If more than `0` 
 info from `mon$attachments.mon$server_pid` will be saved to `server_pid` field 
 of tables [dbmon_structure_changelog][] and [dbmon_data_changelog][].
 
 
-#### log_attachement_auth_method
+#### log_attachment_auth_method
 
 If more than `0` 
 info from `mon$attachments.mon$auth_method` will be saved to `auth_method` field 

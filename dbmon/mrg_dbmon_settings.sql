@@ -3,19 +3,19 @@ merge into dbmon_settings as cur
         select
             trim(k) as key, trim(v) as val, trim(d) as description
         from (
-            select 'log_attachement_client_os_user' as k, 0 as v
+            select 'log_attachment_client_os_user' as k, 0 as v
                 , 'Enables saving info from `mon$attachments.mon$remote_os_user` to `client_os_user` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
             from rdb$database
             union
-            select 'log_attachement_client_version' as k, 0 as v
+            select 'log_attachment_client_version' as k, 0 as v
                 , 'Enables saving info from `mon$attachments.mon$client_version` to `client_version` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
             from rdb$database
             union
-            select 'log_attachement_server_pid' as k, 0 as v
+            select 'log_attachment_server_pid' as k, 0 as v
                 , 'Enables saving info from `mon$attachments.mon$server_pid` to `server_pid` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
             from rdb$database
             union
-            select 'log_attachement_auth_method' as k, 0 as v
+            select 'log_attachment_auth_method' as k, 0 as v
                 , 'Enables saving info from `mon$attachments.mon$auth_method` to `auth_method` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
             from rdb$database
             union

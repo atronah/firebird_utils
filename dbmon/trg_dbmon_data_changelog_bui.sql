@@ -15,10 +15,6 @@ declare call_stack_source_column type of column mon$call_stack.mon$source_column
 declare context_variable_name type of column mon$context_variables.mon$variable_name;
 declare context_variable_value type of column mon$context_variables.mon$variable_value;
 
-declare log_attachment_client_os_user smallint;
-declare log_attachment_client_version smallint;
-declare log_attachment_server_pid smallint;
-declare log_attachment_auth_method smallint;
 declare log_call_stack smallint;
 declare log_context_variables type of column dbmon_settings.val;
 begin
@@ -42,10 +38,6 @@ begin
     new.client_user = coalesce(new.client_user, old.client_user, current_user);
     new.client_role = coalesce(new.client_role, old.client_role, current_role);
     new.client_protocol = coalesce(new.client_protocol, old.client_protocol, rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL'));
-    new.client_version = coalesce(new.client_version, old.client_version, rdb$get_context('USER_SESSION', 'DBMON_CLIENT_VERSION'));
-    new.client_os_user = coalesce(new.client_os_user, old.client_os_user, rdb$get_context('USER_SESSION', 'DBMON_CLIENT_OS_USER'));
-    new.server_pid = coalesce(new.server_pid, old.server_pid, rdb$get_context('USER_SESSION', 'DBMON_SERVER_PID'));
-    new.auth_method = coalesce(new.auth_method, old.auth_method, rdb$get_context('USER_SESSION', 'DBMON_AUTH_METHOD'));
 
     new.session_id = coalesce(new.session_id, old.session_id, current_connection);
     new.transaction_id = coalesce(new.transaction_id, old.transaction_id, current_transaction);
@@ -53,34 +45,13 @@ begin
     new.client_pid = coalesce(new.client_pid, old.client_pid, rdb$get_context('SYSTEM', 'CLIENT_PID'));
     new.engine_version = coalesce(new.engine_version, old.engine_version, rdb$get_context('SYSTEM', 'ENGINE_VERSION'));
 
-    log_attachment_client_os_user = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_client_os_user');
-    log_attachment_client_version = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_client_version');
-    log_attachment_server_pid = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_server_pid');
-    log_attachment_auth_method = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_attachment_auth_method');
-    if (nullif(trim(new.client_os_user), '') is null and log_attachment_client_os_user > 0
-            or nullif(trim(new.client_version), '') is null and log_attachment_client_version > 0
-            or nullif(trim(new.server_pid), '') is null and log_attachment_server_pid > 0
-            or nullif(trim(new.auth_method), '') is null and log_attachment_auth_method > 0
-        ) then
-    begin
-        select
-                coalesce(nullif(trim(new.client_os_user), ''), nullif(trim(a.mon$remote_os_user), ''))
-                , coalesce(nullif(trim(new.client_version), ''), nullif(trim(a.mon$client_version), ''))
-                , coalesce(nullif(trim(new.server_pid), ''), nullif(trim(a.mon$server_pid), ''))
-                , coalesce(nullif(trim(new.auth_method), ''), nullif(trim(a.mon$auth_method), ''))
-            from mon$attachments as a
-            where a.mon$attachment_id = current_connection
-            into new.client_os_user, new.client_version, new.server_pid, new.auth_method;
-
-        if (new.client_os_user is not null)
-            then rdb$set_context('USER_SESSION', 'DBMON_CLIENT_OS_USER', new.client_os_user);
-        if (new.client_version is not null)
-            then rdb$set_context('USER_SESSION', 'DBMON_CLIENT_VERSION', new.client_version);
-        if (new.client_os_user is not null)
-            then rdb$set_context('USER_SESSION', 'DBMON_SERVER_PID', new.server_pid);
-        if (new.client_os_user is not null)
-            then rdb$set_context('USER_SESSION', 'DBMON_AUTH_METHOD', new.auth_method);
-    end
+    select
+            coalesce(new.server_pid, a.server_pid)
+            , coalesce(new.auth_method, a.auth_method)
+            , coalesce(new.client_version, a.client_version)
+            , coalesce(new.client_os_user, a.client_os_user)
+        from dbmon_attachment_info(new.table_name, new.changed_field_name) as a
+        into new.server_pid, new.auth_method, new.client_version, new.client_os_user;
 
     log_call_stack = (select iif(val similar to '0|1', val, 0) from dbmon_settings where key = 'log_call_stack');
     if (new.call_stack is null

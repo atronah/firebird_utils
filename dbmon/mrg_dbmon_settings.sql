@@ -3,24 +3,26 @@ merge into dbmon_settings as cur
         select
             trim(k) as key, trim(v) as val, trim(d) as description
         from (
-            select 'log_attachment_client_os_user' as k, 0 as v
-                , 'Enables saving info from `mon$attachments.mon$remote_os_user` to `client_os_user` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
+            select 'attachment_info_logging_mode' as k, 0 as v
+                , 'Specifies mode of logging info from system table `mon$attachments`
+into fields `client_version`, `client_os_user`, `server_pid` and `auth_method`
+of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.
+
+Available values:
+- 0 - disable logging
+- 1 - log without caching (in context variables)
+- 2 - log with caching (in context variables)
+- 3 - log using data from user query (specified in setting `attachment_info_view`)
+' as d
             from rdb$database
             union
-            select 'log_attachment_client_version' as k, 0 as v
-                , 'Enables saving info from `mon$attachments.mon$client_version` to `client_version` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
-            from rdb$database
-            union
-            select 'log_attachment_server_pid' as k, 0 as v
-                , 'Enables saving info from `mon$attachments.mon$server_pid` to `server_pid` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
-            from rdb$database
-            union
-            select 'log_attachment_auth_method' as k, 0 as v
-                , 'Enables saving info from `mon$attachments.mon$auth_method` to `auth_method` field of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
-            from rdb$database
-            union
-            select 'log_context_variables' as k, '' as v
-                , 'Semicolon separated list of context variables (in format `<NAME_SPACE>.<VARIABLE_NAME>`) which should be logged into field `context_variables`  of tables `dbmon_structure_changelog` and `dbmon_data_changelog`.' as d
+            select 'attachment_info_user_query' as k, null as v
+                , 'User query to get attachment info, that should return the following fields:
+- `server_pid`
+- `client_os_user`
+- `client_version`
+- `auth_method`
+' as d
             from rdb$database
             union
             select 'log_call_stack' as k, 0 as v

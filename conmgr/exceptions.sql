@@ -1,0 +1,1 @@
+create exception conmgr_connection_blocked 'Connection blocked by atronah/firebird_utils/conmgr';

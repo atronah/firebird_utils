@@ -6,6 +6,8 @@ create table dbmon_tracked_field(
     , exclude_roles varchar(1024)
     , update_track_triggers smallint
     , log_call_stack smallint
+    , attachment_info_logging_mode smallint
+    , attachment_info_user_query varchar(1024)
     , errors varchar(1024)
     , constraint pk_dbmon_tracked_field primary key (table_name, field_name)
 );

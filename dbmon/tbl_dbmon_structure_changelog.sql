@@ -83,3 +83,4 @@ create sequence dbmon_structure_changelog_seq;
 create desc index idx_dbmon_str_changelog_checked on dbmon_structure_changelog (checked);
 create desc index idx_dbmon_str_changelog_changed on dbmon_structure_changelog (changed);
 create asc index idx_dbmon_str_changelog_dtnctc on dbmon_structure_changelog (object_name, object_type, db_name, change_type, changed);
+create asc index idx_dbmon_str_changelog_sid on dbmon_structure_changelog (session_id);

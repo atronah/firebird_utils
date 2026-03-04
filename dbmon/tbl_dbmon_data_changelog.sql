@@ -81,3 +81,4 @@ create sequence dbmon_data_changelog_seq;
 
 create desc index idx_dbmon_dat_changelog_changed on dbmon_data_changelog (changed);
 create asc index idx_dbmon_dat_changelog_tbl_key on dbmon_data_changelog (table_name, primary_key_1, primary_key_2, primary_key_3);
+create asc index idx_dbmon_dat_changelog_tbl_sid on dbmon_data_changelog (session_id);

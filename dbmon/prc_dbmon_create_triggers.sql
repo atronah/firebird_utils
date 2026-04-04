@@ -90,11 +90,12 @@ begin
     || ') then
     begin
         is_unknown_field_mark = 0;
+        changed_field_name = ''' || field_name || ''';
         insert into dbmon_data_changelog
                 (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields
                 , change_type, changed_field_name, old_value, new_value)
         values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields
-                , :change_type, ''' || field_name || '''
+                , :change_type, :changed_field_name
                 , left(old.' || field_name || ', 16000), left(new.' || field_name || ', 16000));
     end'
             ;
@@ -139,6 +140,7 @@ declare primary_key_1 type of column dbmon_data_changelog.primary_key_1;
 declare primary_key_2 type of column dbmon_data_changelog.primary_key_2;
 declare primary_key_3 type of column dbmon_data_changelog.primary_key_3;
 declare change_type type of column dbmon_data_changelog.change_type;
+declare changed_field_name type of column dbmon_data_changelog.changed_field_name;
 declare enabled_field_names varchar(16384);
 begin
     enabled_field_names = (select
@@ -182,8 +184,8 @@ begin
     when any do
     begin
         insert into dbmon_data_changelog
-                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type)
-        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, ''ERROR'');
+                (table_name, primary_key_1, primary_key_2, primary_key_3, primary_key_fields, change_type, changed_field_name, change_comment)
+        values (:table_name, :primary_key_1, :primary_key_2, :primary_key_3, :primary_key_fields, ''ERROR'', :changed_field_name, ''SQLCODE = '' || coalesce(SQLCODE, ''null'') || ''; GDSCODE = '' || coalesce(GDSCODE, ''null'') || ''; SQLSTATE = '' || coalesce(SQLSTATE, ''null''));
     end
 end
 ';

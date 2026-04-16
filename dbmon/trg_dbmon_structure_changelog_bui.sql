@@ -29,7 +29,6 @@ begin
     new.client_user = coalesce(new.client_user, old.client_user, current_user);
     new.client_role = coalesce(new.client_role, old.client_role, current_role);
     new.client_protocol = coalesce(new.client_protocol, old.client_protocol, rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL'));
-    new.client_version = coalesce(new.client_protocol, old.client_protocol, rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL'));
 
     new.session_id = coalesce(new.session_id, old.session_id, current_connection);
     new.transaction_id = coalesce(new.transaction_id, old.transaction_id, current_transaction);

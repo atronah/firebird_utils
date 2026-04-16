@@ -15,6 +15,13 @@ begin
     object_type = upper(trim(rdb$get_context('DDL_TRIGGER', 'OBJECT_TYPE')));
     object_name = upper(trim(rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME')));
 
+    -- stop processing for read-only transaction
+    -- to prevent exception because of trying do insert in read-only mode
+    if ((select mon$read_only
+          from mon$transactions
+          where mon$transaction_id = current_transaction) > 0)
+        then exit;
+
     select
             bsc.enabled, bsc.comment
         from dbmon_block_stucture_changes as bsc

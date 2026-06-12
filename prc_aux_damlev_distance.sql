@@ -1,18 +1,18 @@
 set term ^ ;
 
 create or alter procedure aux_damlev_distance(
-	src varchar(4096)
-	, trg varchar(4096)
-	, details_mode smallint = null
+    src varchar(4096)
+    , trg varchar(4096)
+    , details_mode smallint = null
 )
 returns (
-	distance bigint
-	, len1 bigint
-	, len2 bigint
+    distance bigint
+    , len1 bigint
+    , len2 bigint
 
-	, matrix blob sub_type text
+    , matrix blob sub_type text
 
-	, details varchar(12288)
+    , details varchar(12288)
 )
 as
 declare r type of column aux_damlev_matrix.r;
@@ -30,200 +30,200 @@ declare operations_line varchar(4096);
 declare src_line varchar(4096);
 declare trg_line varchar(4096);
 begin
-	-- author: atronah (look for me by this nickname on GitHub and GitLab)
+    -- author: atronah (look for me by this nickname on GitHub and GitLab)
     -- source: https://github.com/atronah/firebird_utils/tree/master
 
-	details_mode = coalesce(details_mode, 0);
+    details_mode = coalesce(details_mode, 0);
 
-	distance = 0;
-	matrix = '';
+    distance = 0;
+    matrix = '';
 
-	if (src is not distinct from trg) then
-	begin
-		suspend;
-		exit;
-	end
+    if (src is not distinct from trg) then
+    begin
+        suspend;
+        exit;
+    end
 
-	len1 = char_length(src);
-	len2 = char_length(trg);
+    len1 = char_length(src);
+    len2 = char_length(trg);
 
-	-- initiating first row of matrix
-	r = 0;
-	while (r <= len1) do
-	begin
-		update or insert into aux_damlev_matrix(r, c, v)
-			values (:r, 0, :r);
-		r = r + 1;
-	end
+    -- initiating first row of matrix
+    r = 0;
+    while (r <= len1) do
+    begin
+        update or insert into aux_damlev_matrix(r, c, v)
+            values (:r, 0, :r);
+        r = r + 1;
+    end
 
-	-- initiating first column of matrix
-	c = 0;
-	matrix_line = lpad('.', 4, ' ') || lpad('.', 4, ' ');
-	while (c <= len2) do
-	begin
-		update or insert into aux_damlev_matrix(r, c, v)
-			values (0, :c, :c);
+    -- initiating first column of matrix
+    c = 0;
+    matrix_line = lpad('.', 4, ' ') || lpad('.', 4, ' ');
+    while (c <= len2) do
+    begin
+        update or insert into aux_damlev_matrix(r, c, v)
+            values (0, :c, :c);
 
-		if (c > 0)
-			then matrix_line = matrix_line || lpad(substring(trg from c for 1), 4, ' ');
-		c = c + 1;
-	end
-	matrix = matrix || matrix_line || ascii_char(10);
+        if (c > 0)
+            then matrix_line = matrix_line || lpad(substring(trg from c for 1), 4, ' ');
+        c = c + 1;
+    end
+    matrix = matrix || matrix_line || ascii_char(10);
 
-	-- preparing second row of result matrix
-	c = 0; matrix_line = lpad('.', 4, ' ');
-	while (c <= len2) do
-	begin
-		matrix_line = matrix_line || lpad(c, 4, ' ');
-		c = c + 1;
-	end
-	matrix = matrix || matrix_line || ascii_char(10);
+    -- preparing second row of result matrix
+    c = 0; matrix_line = lpad('.', 4, ' ');
+    while (c <= len2) do
+    begin
+        matrix_line = matrix_line || lpad(c, 4, ' ');
+        c = c + 1;
+    end
+    matrix = matrix || matrix_line || ascii_char(10);
 
-	r = 1;
-	while (r <= len1) do
-	begin
-		matrix_line = lpad(substring(src from r for 1), 4, ' ') || lpad(r, 4, ' ');
+    r = 1;
+    while (r <= len1) do
+    begin
+        matrix_line = lpad(substring(src from r for 1), 4, ' ') || lpad(r, 4, ' ');
 
-		c = 1;
-		while (c <= len2) do
-		begin
-			cost = iif(substring(src from r for 1) = substring(trg from c for 1), 0, 1);
-			v = minvalue(
-				-- deletion
-				(select v + 1
-					from aux_damlev_matrix
-					where r = (:r - 1) and c = :c)
-				-- insertion
-				, (select v + 1
-					from aux_damlev_matrix
-					where r = :r and c = (:c - 1))
-				-- substitution
-				, (select v + :cost
-					from aux_damlev_matrix
-					where r = (:r - 1) and c = (:c - 1))
-			);
+        c = 1;
+        while (c <= len2) do
+        begin
+            cost = iif(substring(src from r for 1) = substring(trg from c for 1), 0, 1);
+            v = minvalue(
+                -- deletion
+                (select v + 1
+                    from aux_damlev_matrix
+                    where r = (:r - 1) and c = :c)
+                -- insertion
+                , (select v + 1
+                    from aux_damlev_matrix
+                    where r = :r and c = (:c - 1))
+                -- substitution
+                , (select v + :cost
+                    from aux_damlev_matrix
+                    where r = (:r - 1) and c = (:c - 1))
+            );
 
-			-- transposition
-			if (r > 1 and c > 1
-				and substring(src from r - 1 for 1) = substring(trg from c - 1 for 1)
-			) then
-			begin
-				v = minvalue(
-					v
-					, (select v + :cost
-						from aux_damlev_matrix
-						where r = (:r - 2) and c = (:c - 2))
-				);
-			end
+            -- transposition
+            if (r > 1 and c > 1
+                and substring(src from r - 1 for 1) = substring(trg from c - 1 for 1)
+            ) then
+            begin
+                v = minvalue(
+                    v
+                    , (select v + :cost
+                        from aux_damlev_matrix
+                        where r = (:r - 2) and c = (:c - 2))
+                );
+            end
 
-			update or insert into aux_damlev_matrix(r, c, v)
-				values (:r, :c, :v);
+            update or insert into aux_damlev_matrix(r, c, v)
+                values (:r, :c, :v);
 
-			matrix_line = matrix_line || lpad(v, 4, ' ');
+            matrix_line = matrix_line || lpad(v, 4, ' ');
 
-			c = c + 1;
-		end
+            c = c + 1;
+        end
 
-		matrix = matrix || matrix_line || ascii_char(10);
+        matrix = matrix || matrix_line || ascii_char(10);
 
-		r = r + 1;
-	end
+        r = r + 1;
+    end
 
-	distance = v;
-
-
-	if (details_mode = 1) then
-	begin
-		details = '';
-		operations_line = '';
-		src_line = '';
-		trg_line = '';
-
-		r = len1; c = len2;
-		min_v = distance;
-		while (r > 0 or c > 0) do
-		begin
-			operation = '.';
-			src_symbols = '.';
-			trg_symbols = '.';
-
-			if (r > 0) then
-			begin
-				v = (select v
-							from aux_damlev_matrix
-							where r = (:r - 1) and c = :c);
-				if (v <= min_v) then
-				begin
-					min_v = v;
-					new_r = r - 1; new_c = c;
-					operation = 'D';
-					src_symbols = substring(src from r for 1);
-					trg_symbols = '.';
-				end
-			end
-
-			if (c > 0) then
-			begin
-				v = (select v
-							from aux_damlev_matrix
-							where r = :r and c = (:c - 1));
-				if (v <= min_v) then
-				begin
-					min_v = v;
-					new_r = r; new_c = c - 1;
-					operation = 'I';
-					src_symbols = '.';
-					trg_symbols = substring(trg from c for 1);
-				end
-			end
-
-			if (r > 0 and c > 0) then
-			begin
-				v = (select v
-							from aux_damlev_matrix
-							where r = (:r - 1) and c = (:c - 1));
-				if (v <= min_v) then
-				begin
-					min_v = v;
-					new_r = r - 1; new_c = c - 1;
-					src_symbols = substring(src from r for 1);
-					trg_symbols = substring(trg from c for 1);
-					operation = iif(src_symbols = trg_symbols, 'N', 'S');
-				end
-			end
-
-			if (r > 1 and c > 1
-					and substring(src from r for 1) = substring(trg from c - 1 for 1)
-					and substring(trg from c for 1) = substring(src from r - 1 for 1)
-			) then
-			begin
-				v = (select v
-						from aux_damlev_matrix
-						where r = (:r - 2) and c = (:c - 2));
-
-				if (v <= min_v) then
-				begin
-					min_v = v;
-					new_r = r - 2; new_c = c - 2;
-					operation = 'T.';
-					src_symbols = substring(src from r - 1 for 1) || substring(src from r for 1);
-					trg_symbols = substring(trg from c - 1 for 1) || substring(trg from c for 1);
-				end
-			end
-
-			r = new_r; c = new_c;
-			operations_line = trim(operation) || operations_line;
-			src_line = trim(src_symbols) || src_line;
-			trg_line = trim(trg_symbols) || trg_line;
-		end
-
-		details = operations_line || ascii_char(10)
-				|| src_line || ascii_char(10)
-				|| trg_line;
-	end
+    distance = v;
 
 
-	suspend;
+    if (details_mode = 1) then
+    begin
+        details = '';
+        operations_line = '';
+        src_line = '';
+        trg_line = '';
+
+        r = len1; c = len2;
+        min_v = distance;
+        while (r > 0 or c > 0) do
+        begin
+            operation = '.';
+            src_symbols = '.';
+            trg_symbols = '.';
+
+            if (r > 0) then
+            begin
+                v = (select v
+                            from aux_damlev_matrix
+                            where r = (:r - 1) and c = :c);
+                if (v <= min_v) then
+                begin
+                    min_v = v;
+                    new_r = r - 1; new_c = c;
+                    operation = 'D';
+                    src_symbols = substring(src from r for 1);
+                    trg_symbols = '.';
+                end
+            end
+
+            if (c > 0) then
+            begin
+                v = (select v
+                            from aux_damlev_matrix
+                            where r = :r and c = (:c - 1));
+                if (v <= min_v) then
+                begin
+                    min_v = v;
+                    new_r = r; new_c = c - 1;
+                    operation = 'I';
+                    src_symbols = '.';
+                    trg_symbols = substring(trg from c for 1);
+                end
+            end
+
+            if (r > 0 and c > 0) then
+            begin
+                v = (select v
+                            from aux_damlev_matrix
+                            where r = (:r - 1) and c = (:c - 1));
+                if (v <= min_v) then
+                begin
+                    min_v = v;
+                    new_r = r - 1; new_c = c - 1;
+                    src_symbols = substring(src from r for 1);
+                    trg_symbols = substring(trg from c for 1);
+                    operation = iif(src_symbols = trg_symbols, 'N', 'S');
+                end
+            end
+
+            if (r > 1 and c > 1
+                    and substring(src from r for 1) = substring(trg from c - 1 for 1)
+                    and substring(trg from c for 1) = substring(src from r - 1 for 1)
+            ) then
+            begin
+                v = (select v
+                        from aux_damlev_matrix
+                        where r = (:r - 2) and c = (:c - 2));
+
+                if (v <= min_v) then
+                begin
+                    min_v = v;
+                    new_r = r - 2; new_c = c - 2;
+                    operation = 'T.';
+                    src_symbols = substring(src from r - 1 for 1) || substring(src from r for 1);
+                    trg_symbols = substring(trg from c - 1 for 1) || substring(trg from c for 1);
+                end
+            end
+
+            r = new_r; c = new_c;
+            operations_line = trim(operation) || operations_line;
+            src_line = trim(src_symbols) || src_line;
+            trg_line = trim(trg_symbols) || trg_line;
+        end
+
+        details = operations_line || ascii_char(10)
+                || src_line || ascii_char(10)
+                || trg_line;
+    end
+
+
+    suspend;
 end^
 
 set term ; ^
@@ -239,11 +239,11 @@ Let''s take two strings as an example:
 - target string: "xbdc"
 
 Transformation the source string to the target string required 4 simple operations:
-	`z` -> `.` - (1) [D]eleting
-	`a` -> `x` - (2) [S]ubstituting
-	`b` -> `b` - (-) [N]othing
-	`c` -> `d` - (3) [T]ransposition
-	`d` -> `c` - (4) [T]ransposition
+    `z` -> `.` - (1) [D]eleting
+    `a` -> `x` - (2) [S]ubstituting
+    `b` -> `b` - (-) [N]othing
+    `c` -> `d` - (3) [T]ransposition
+    `d` -> `c` - (4) [T]ransposition
 
 Matrix of Wagner–Fischer algorithm (value of `matrix` output parameter) will be:
    .   .   x   b   d   c
@@ -272,11 +272,11 @@ comment on parameter aux_damlev_distance.details_mode is 'Specifies content for 
 - null/0 - do not make `details`
 - `1` - `details` will contains 3 lines:
     - first line with sequence of operatoions that represented by one-character codes:
-    	- [N]othing - keeping character in the source string without changes
-    	- [D]eleting - removing character from the source string
-    	- [I]nserting - adding new character into the source string
-    	- [S]ubstituting - replacing character from the source string to character of the target string
-    	- [T]ransposition - swap the character of the source string with the next character of the source string
+        - [N]othing - keeping character in the source string without changes
+        - [D]eleting - removing character from the source string
+        - [I]nserting - adding new character into the source string
+        - [S]ubstituting - replacing character from the source string to character of the target string
+        - [T]ransposition - swap the character of the source string with the next character of the source string
     - second line with sequence of the source string characters that involved in the operations (on the same place in the first line of details)
     - third line with sequence of the target string characters that involved in the operations (on the same place in the first line of details)
 ';

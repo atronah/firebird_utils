@@ -5,15 +5,12 @@ create or alter function auxf_damlev_distance(
 	, trg varchar(4096)
 )
 returns bigint
-)
 as
 begin
 	-- author: atronah (look for me by this nickname on GitHub and GitLab)
     -- source: https://github.com/atronah/firebird_utils/tree/master
 
 	return (select distance from aux_damlev_distance(:src, :trg));
-
-	suspend;
 end^
 
 set term ; ^

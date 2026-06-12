@@ -13,6 +13,6 @@ author: atronah (look for me by this nickname on GitHub and GitLab)
 source: https://github.com/atronah/firebird_utils/tree/master
 ';
 
-comment on table aux_damlev_matrix.r is 'Row number of matrix';
-comment on table aux_damlev_matrix.c is 'Column number of matrix';
-comment on table aux_damlev_matrix.v is 'Value of cell with the row number `r` and the column number `c`';
+comment on column aux_damlev_matrix.r is 'Row number of matrix';
+comment on column aux_damlev_matrix.c is 'Column number of matrix';
+comment on column aux_damlev_matrix.v is 'Value of cell with the row number `r` and the column number `c`';

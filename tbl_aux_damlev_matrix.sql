@@ -1,8 +1,8 @@
 create global temporary table aux_damlev_matrix (
-	r bigint
-	, c bigint
-	, v bigint
-	, constraint pk_aux_damlev_matrix primary key (r, c)
+    r bigint
+    , c bigint
+    , v bigint
+    , constraint pk_aux_damlev_matrix primary key (r, c)
 ) on commit delete rows;
 
 

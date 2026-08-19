@@ -88,33 +88,36 @@ begin
                 and val similar to '[[:WHITESPACE:]]*'
         ) then val = null;
 
-        val_length = char_length(val);
-        if (formatting = HUMAN_READABLE_FORMATTING and val_length < 32000) then
+        if (val > '') then
         begin
-            val_tmp = '';
-            val_32k = val;
-
-            while (val_32k containing ENDL) do
+            val_length = char_length(val);
+            if (formatting = HUMAN_READABLE_FORMATTING and val_length < 32000) then
             begin
-                val_tmp = val_tmp
-                            || iif(val_tmp > '', indent, '')
-                            || substring(val_32k from 1 for position(:ENDL in val_32k) + char_length(:ENDL) - 1);
-                val_32k = substring(val_32k from position(:ENDL in val_32k) + char_length(:ENDL));
+                val_tmp = '';
+                val_32k = val;
+
+                while (val_32k containing ENDL) do
+                begin
+                    val_tmp = val_tmp
+                                || iif(val_tmp > '', indent, '')
+                                || substring(val_32k from 1 for position(:ENDL in val_32k) + char_length(:ENDL) - 1);
+                    val_32k = substring(val_32k from position(:ENDL in val_32k) + char_length(:ENDL));
+                end
+                val_32k = val_tmp || iif(val_32k > '', indent, '') || val_32k;
+                val = val_32k;
+                val_length = char_length(val_32k);
             end
-            val_32k = val_tmp || iif(val_32k > '', indent, '') || val_32k;
-            val = val_32k;
-            val_length = char_length(val_32k);
-        end
 
-        -- trailing last white spaces and comma (instead of `val = trim(trim(trailing ',' from val));`)
-        pos = val_length;
-        while (substring(val from pos for 1) in (ASCII_CHAR(13), ASCII_CHAR(10), ASCII_CHAR(32), ',')) do
-        begin
-            pos = pos - 1;
-        end
+            -- trailing last white spaces and comma (instead of `val = trim(trim(trailing ',' from val));`)
+            pos = val_length;
+            while (substring(val from pos for 1) in (ASCII_CHAR(13), ASCII_CHAR(10), ASCII_CHAR(32), ',')) do
+            begin
+                pos = pos - 1;
+            end
 
-        if (pos < val_length)
-            then val = left(val, pos);
+            if (pos < val_length)
+                then val = left(val, pos);
+        end
 
         val = case value_type
                     when 'obj' then iif(val similar to '[[:WHITESPACE:]]*&{%' escape '&'

@@ -16,8 +16,8 @@ returns(
 as
 declare object_full_name varchar(255);
 declare object_type_filter type of column rdb$dependencies.rdb$dependent_type;
-declare next_objects_to_process varchar(32000);
-declare processed_objects varchar(32000);
+declare next_objects_to_process tblob;
+declare processed_objects tblob;
 declare required_object_name varchar(255);
 declare required_object_column varchar(255);
 declare required_object_type type of column rdb$dependencies.rdb$depended_on_type;
@@ -77,7 +77,7 @@ begin
                 ) as object_column
             from aux_split_text(:objects_to_process, ',')
             where trim(part) not similar to :objects_to_exclude_regex
-                and (',' || :processed_objects || ',') not like ('%,' || hash(upper(trim(part))) || ',%')
+                and blob_append(',', :processed_objects, ',') not like ('%,' || hash(upper(trim(part))) || ',%')
             into object_name, object_column
         do
         begin
@@ -153,8 +153,8 @@ begin
                 object_full_name = trim(object_type || ':'
                                         || object_name
                                         || coalesce('.' || object_column, ''));
-                if ((',' || :processed_objects || ',') not like ('%,' || hash(object_full_name) || ',%'))
-                    then processed_objects = processed_objects || ',' || hash(object_full_name);
+                if (blob_append(',', :processed_objects, ',') not like ('%,' || hash(object_full_name) || ',%'))
+                    then processed_objects = blob_append(processed_objects, ',', hash(object_full_name));
 
                 suspend;
 
@@ -168,7 +168,7 @@ begin
                     where rdb$dependent_name = :object_name
                         and rdb$dependent_type = :object_type
                         and trim(rdb$depended_on_name) || trim(coalesce('.' || trim(rdb$field_name), '')) not similar to :objects_to_exclude_regex
-                        and (',' || :processed_objects || ',')
+                        and blob_append(',', :processed_objects, ',')
                                 not like ('%,' || hash(rdb$depended_on_type || ':'
                                                         || upper(trim(rdb$depended_on_name)
                                                         || trim(coalesce('.' || trim(rdb$field_name), '')))) || ',%')
@@ -185,7 +185,7 @@ begin
                         and rdb$field_name = upper(trim(coalesce(:object_column, rdb$field_name)))
                         and rdb$field_source not starts with 'RDB$'
                         and trim(rdb$relation_name) not similar to :objects_to_exclude_regex
-                        and (',' || :processed_objects || ',')
+                        and blob_append(',', :processed_objects, ',')
                                 not like ('%,' || hash(upper(trim(:TYPE_DOMAIN || ':' || rdb$field_source))) || ',%')
                         and (',' || :types_to_exclude || ',') not like ('%,' || :TYPE_DOMAIN || ',%')
                     into required_object_name, required_object_column, required_object_type
@@ -197,9 +197,9 @@ begin
                     object_full_name =  trim(required_object_type || ':'
                                             || required_object_name
                                             || coalesce('.' || required_object_column, ''));
-                    if ((',' || next_objects_to_process || ',') not like ('%,' || object_full_name || ',%')) then
+                    if (blob_append(',', next_objects_to_process, ',') not like ('%,' || object_full_name || ',%')) then
                     begin
-                        next_objects_to_process = next_objects_to_process || ',' || object_full_name;
+                        next_objects_to_process = blob_append(next_objects_to_process, ',', object_full_name);
                     end
                 end
             end

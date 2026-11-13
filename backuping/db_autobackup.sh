@@ -139,7 +139,7 @@ else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] removing old ${db_alias}.fdb from $out_dir"
         rm -f "${out_dir}/$db_alias".fdb
 
-    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for $backup_fullpath into $restore_fullpath"
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for $backup_fullpath into $restore_fullpath"
         $fb_gbak -user $db_user -password $db_password -c -v "$backup_fullpath" "$restore_fullpath" -y "$restore_fullpath".log
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
 
@@ -154,7 +154,7 @@ else
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename $restore_fullpath).log"
             mv "$restore_fullpath".log "$out_dir/ERROR_$(basename $restore_fullpath)".log
         else
-        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
             ls -lhs "${restore_fullpath}" >> "${out_dir}/$db_alias".sizelog
 
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"

@@ -167,7 +167,10 @@ else
 
     if [ "$through_console" != "T" ]; then
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive $archive_name for $backup_fullpath"
-        $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log "$restore_fullpath".log
+        $zipper a "$archive_name" "$backup_fullpath" "$backup_fullpath".log
+        if [ "$skip_restore" != "T" ]; then
+            $zipper a "$archive_name" "$restore_fullpath".log
+        fi
     else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] add $backup_fullpath.log into archive $archive_name "
         $zipper a "$archive_name" "$backup_fullpath".log

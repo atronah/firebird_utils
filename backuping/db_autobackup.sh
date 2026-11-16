@@ -13,11 +13,16 @@ db_password=masterkey
 
 out_dir="/var/db/backups/auto"
 work_dir="/var/db/backups/auto/tmp"
+restore_with_replace=""
 skip_restore="F"
 through_console="F"
 parallel=""
+
+
 # Parse arguments
-while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:sc" opt; do
+# no collon at start means Verbose Mode (getopts handle and prints errors)
+# collon after option means that it has an argument
+while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:isc" opt; do
     case ${opt} in
         g) fb_gbak="${OPTARG}"
         ;;
@@ -45,6 +50,8 @@ while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:sc" opt; do
         ;;
         x) parallel="-par ${OPTARG}"
         ;;
+        i) restore_with_replace="-rep"
+        ;;
         s) skip_restore="T"
         ;;
         c) through_console="T";
@@ -66,6 +73,7 @@ while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:sc" opt; do
         echo "-z ZIPPER                                 7z util name or path (default: ${zipper})"
         echo "-r RESTORE_DIR                            directory for restore (default: work directory if not specified, i.e. ${work_dir})"
         echo "-x WORKERS_NUMBER                         use WORKERS_NUMBER parralel workers (default: not use at all)"
+        echo "-i                                        restore with replace (inplace), i.e. using -rep option (default: false)"
         echo "-s                                        skip restore"
         echo "-c                                        through console: making backup direct to 7z archive without creating .fbk file"
         exit 1
@@ -98,7 +106,14 @@ archive_name="${db_alias}"_$(date +%d).7z
 if [ ! -d "${restore_dir}" ]; then
     restore_dir="${work_dir}"
 fi
-restore_fullpath="${restore_dir}/${db_alias}_${time_suffix}".fdb
+
+if [[ -z "${restore_with_replace}" ]]; then
+    restore_fullpath="${restore_dir}/${db_alias}_${time_suffix}".fdb
+else
+    restore_fullpath="${out_dir}/${db_alias}.fdb"
+fi
+restore_log_fullpath="${restore_dir}/${db_alias}_${time_suffix}".fdb.log
+
 
 echo ""
 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting script db_autobackup with follow parameters:"
@@ -108,6 +123,7 @@ echo "output dir:           ${out_dir} (used $(df -h ${out_dir} | awk 'NR>1 {pri
 echo "work dir:             ${work_dir} (used $(df -h ${work_dir} | awk 'NR>1 {print $3 " of " $2 ", " $5}'))"
 echo "backup fullpath:      ${backup_fullpath}"
 echo "restore fullpath:     ${restore_fullpath}"
+echo "restore log fullpath: ${restore_log_fullpath}"
 echo "archive name:         ${archive_name}"
 echo "parallel:             ${parallel}"
 echo "skip restore:         ${skip_restore}"
@@ -152,28 +168,30 @@ else
         rm -f "${out_dir}/${db_alias}".fdb
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for ${backup_fullpath} into ${restore_fullpath}"
-        ${fb_gbak} -user ${db_user} -password ${db_password} -c -v ${parallel} "${backup_fullpath}" "${restore_fullpath}" -y "${restore_fullpath}".log
+        ${fb_gbak} -user ${db_user} -password ${db_password} -c -v ${parallel} "${backup_fullpath}" ${restore_with_replace} "${restore_fullpath}" -y "${restore_log_fullpath}"
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
 
-        if grep -e "${error_pattern}" "${restore_fullpath}".log; then
+        if grep -e "${error_pattern}" "${restore_log_fullpath}"; then
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] ERROR during restore"
 
             if [[ -n ${notifier} ]] ; then
                     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] calling notifier ${notifier}"
-                    ${notifier} "Database restore error: $(grep -e "${error_pattern}" "${restore_fullpath}".log)"
+                    ${notifier} "Database restore error: $(grep -e "${error_pattern}" "${restore_log_fullpath}")"
             fi
 
-            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_fullpath}.log to ${out_dir}/ERROR_$(basename ${restore_fullpath}).log"
-            mv "${restore_fullpath}".log "${out_dir}/ERROR_$(basename ${restore_fullpath})".log
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] moving ${restore_log_fullpath} to ${out_dir}/ERROR_$(basename ${restore_log_fullpath}).log"
+            mv "${restore_log_fullpath}" "${out_dir}/ERROR_$(basename ${restore_log_fullpath}).log"
         else
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] append size info to ${out_dir}/${db_alias}.sizelog"
             ls -lhs "${restore_fullpath}" >> "${out_dir}/${db_alias}".sizelog
 
-            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"
-            mv -f "${restore_fullpath}" "${out_dir}/${db_alias}".fdb
+            if [[ -z "${restore_with_replace}" ]]; then
+                echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath} to ${out_dir}/${db_alias}.fdb"
+                mv -f "${restore_fullpath}" "${out_dir}/${db_alias}".fdb
+            fi
 
-            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force renaming ${restore_fullpath}.log to ${out_dir}/${db_alias}.fdb.log"
-            cp -f "${restore_fullpath}".log "${out_dir}/${db_alias}".fdb.log
+            echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force copying ${restore_log_fullpath} to ${out_dir}/${db_alias}.fdb.log"
+            cp -f "${restore_log_fullpath}" "${out_dir}/${db_alias}".fdb.log
         fi
     fi
 
@@ -181,7 +199,7 @@ else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] making archive ${archive_name} for ${backup_fullpath}"
         ${zipper} a "${archive_name}" "${backup_fullpath}" "${backup_fullpath}".log
         if [ "${skip_restore}" != "T" ]; then
-            ${zipper} a "${archive_name}" "${restore_fullpath}".log
+            ${zipper} a "${archive_name}" "${restore_log_fullpath}"
         fi
     else
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] add ${backup_fullpath}.log into archive ${archive_name} "

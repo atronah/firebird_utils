@@ -78,9 +78,23 @@ if [[ -z "${db_alias}" ]] ; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] db alias not specified"
     exit 1
 fi
+
+
+if [ ! -d "${out_dir}" ]; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] creating output directory (because it doesn't exist): ${out_dir}"
+    mkdir -p "${out_dir}"
+fi
+
+if [ ! -d "${work_dir}" ]; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] creating working directory (because it doesn't exist): ${work_dir}"
+    mkdir -p "${work_dir}"
+fi
+
 time_suffix=$(date +%Y%m%d_%H%M)
 backup_fullpath="${work_dir}/${db_alias}_${time_suffix}".fbk
+
 archive_name="${db_alias}"_$(date +%d).7z
+
 if [ ! -d "${restore_dir}" ]; then
     restore_dir="${work_dir}"
 fi
@@ -98,17 +112,6 @@ echo "archive name:         ${archive_name}"
 echo "parallel:             ${parallel}"
 echo "skip restore:         ${skip_restore}"
 echo "through console:      ${through_console}"
-
-
-if [ ! -d "${out_dir}" ]; then
-    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] creating output directory (because it doesn't exist): ${out_dir}"
-    mkdir -p "${out_dir}"
-fi
-
-if [ ! -d "${work_dir}" ]; then
-    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] creating working directory (because it doesn't exist): ${work_dir}"
-    mkdir -p "${work_dir}"
-fi
 
 
 if [ "$(ls -A ${work_dir})" ]; then

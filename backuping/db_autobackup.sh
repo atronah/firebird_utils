@@ -8,7 +8,6 @@ zipper=7za
 error_pattern="\s\+ERROR:"
 
 db_host=127.0.0.1/3050
-db_alias=box_med
 db_user=SYSDBA
 db_password=masterkey
 
@@ -74,6 +73,11 @@ while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:sc" opt; do
     esac
 done
 
+
+if [[ -z "${db_alias}" ]] ; then
+    echo "[$(date +%Y-%m-%d\ %H:%M:%S)] db alias not specified"
+    exit 1
+fi
 time_suffix=$(date +%Y%m%d_%H%M)
 backup_fullpath="${work_dir}/${db_alias}_${time_suffix}".fbk
 archive_name="${db_alias}"_$(date +%d).7z

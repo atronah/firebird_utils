@@ -193,6 +193,8 @@ else
             echo "[$(date +%Y-%m-%d\ %H:%M:%S)] force copying ${restore_log_fullpath} to ${out_dir}/${db_alias}.fdb.log"
             cp -f "${restore_log_fullpath}" "${out_dir}/${db_alias}".fdb.log
         fi
+    else
+        echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore skipping because of -s option"
     fi
 
     if [ "${through_console}" != "T" ]; then

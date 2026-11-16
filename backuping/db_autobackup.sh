@@ -16,8 +16,9 @@ out_dir="/var/db/backups/auto"
 work_dir="/var/db/backups/auto/tmp"
 skip_restore="F"
 through_console="F"
+parallel=""
 # Parse arguments
-while getopts "g:h:d:u:p:o:w:m:n:z:e:r:sc" opt; do
+while getopts "g:h:d:u:p:o:w:m:n:z:e:r:x:sc" opt; do
     case ${opt} in
         g) fb_gbak="${OPTARG}"
         ;;
@@ -43,6 +44,8 @@ while getopts "g:h:d:u:p:o:w:m:n:z:e:r:sc" opt; do
         ;;
         r) restore_dir="${OPTARG}"
         ;;
+        x) parallel="-par ${OPTARG}"
+        ;;
         s) skip_restore="T"
         ;;
         c) through_console="T";
@@ -63,6 +66,7 @@ while getopts "g:h:d:u:p:o:w:m:n:z:e:r:sc" opt; do
         echo "-n /var/db/backups/scripts/notifier.sh    path to script for notifying about errors (should receive message as single argument)"
         echo "-z 7za                                    7z util name or path"
         echo "-r /var/db/backups/auto/tmp               directory for restore (work directory if not specified)"
+        echo "-x N                                      use N parralel workers (not use at all by default)"
         echo "-s                                        skip restore"
         echo "-c                                        through console: making backup direct to 7z archive without creating .fbk file"
         exit 1
@@ -87,6 +91,7 @@ echo "work dir:             ${work_dir} (used $(df -h ${work_dir} | awk 'NR>1 {p
 echo "backup fullpath:      ${backup_fullpath}"
 echo "restore fullpath:     ${restore_fullpath}"
 echo "archive name:         ${archive_name}"
+echo "parallel:             ${parallel}"
 echo "skip restore:         ${skip_restore}"
 echo "through console:      ${through_console}"
 
@@ -116,11 +121,11 @@ pushd "${work_dir}"
 
 if [ "${through_console}" != "T" ]; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} into ${backup_fullpath}"
-    ${fb_gbak} -user ${db_user} -password ${db_password} -b -g -v "${db_host}:${db_alias}" "${backup_fullpath}" -y "${backup_fullpath}".log
+    ${fb_gbak} -user ${db_user} -password ${db_password} -b -g -v ${parallel} "${db_host}:${db_alias}" "${backup_fullpath}" -y "${backup_fullpath}".log
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backuping has been finished"
 else
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting backup for ${db_host}:${db_alias} direct into ${archive_name}"
-    ${fb_gbak} -user ${db_user} -password ${db_password} -b -g -v "${db_host}:${db_alias}" stdout -y "${backup_fullpath}".log | ${zipper} a -si ${archive_name}
+    ${fb_gbak} -user ${db_user} -password ${db_password} -b -g -v ${parallel} "${db_host}:${db_alias}" stdout -y "${backup_fullpath}".log | ${zipper} a -si ${archive_name}
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] backuping and compressing has been finished"
 fi
 
@@ -140,7 +145,7 @@ else
         rm -f "${out_dir}/${db_alias}".fdb
 
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] starting restore for ${backup_fullpath} into ${restore_fullpath}"
-        ${fb_gbak} -user ${db_user} -password ${db_password} -c -v "${backup_fullpath}" "${restore_fullpath}" -y "${restore_fullpath}".log
+        ${fb_gbak} -user ${db_user} -password ${db_password} -c -v ${parallel} "${backup_fullpath}" "${restore_fullpath}" -y "${restore_fullpath}".log
         echo "[$(date +%Y-%m-%d\ %H:%M:%S)] restore has been finished"
 
         if grep -e "${error_pattern}" "${restore_fullpath}".log; then

@@ -93,6 +93,8 @@ if [ ! -d "${out_dir}" ]; then
     mkdir -p "${out_dir}"
 fi
 
+work_dir="${work_dir}/${db_alias}"
+
 if [ ! -d "${work_dir}" ]; then
     echo "[$(date +%Y-%m-%d\ %H:%M:%S)] creating working directory (because it doesn't exist): ${work_dir}"
     mkdir -p "${work_dir}"
